@@ -1,0 +1,544 @@
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: black; /* Default text color to black */
+}
+
+body {
+  background: #f0f2f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  color: #2d3748;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar styles */
+.sidebar {
+  width: 220px;
+    height: 100vh;
+    background-color: #553360;
+    background-image: linear-gradient(315deg, #4b6cb7 0%, #182848 74%);
+    color:white;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+  padding: 15px;
+  font-size: 18px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.menu-item.active {
+  background: rgba(242, 238, 238, 0.2);
+  color: white;
+}
+
+.menu-item .icon {
+  margin-right: 12px;
+  font-size: 20px;
+}
+
+/* Main content area */
+.main-content {
+  flex: 1;
+  margin-left: 240px; /* Same as sidebar width */
+  background: #f8fafc;
+  min-height: 100vh;
+  width: calc(100% - 240px);
+}
+
+/* Header styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: white;
+  border-radius: 20px;
+  margin: 0;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.hospital-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #000;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dashboard stats cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 100%;
+  margin: 30px 0;
+  padding: 0;
+}
+
+.stat-tile {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: 100px;
+  width: 100%;
+}
+
+.chart-container {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  margin-top: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-container h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Make stats even bigger */
+.stat-number {
+  font-size: 36px;
+  font-weight: 600;
+}
+
+.stat-title {
+  font-size: 20px;
+  color: #666;
+}
+
+.icon-container {
+  width: 65px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+/* Chart sections */
+.chart-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.chart-stats {
+  display: flex;
+  gap: 48px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  color: #000; /* Default table text color */
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  color: #000; /* Black color for table headers */
+  font-weight: 600;
+  background: #f8f9fa;
+}
+
+td {
+  color: #000; /* Black color for table data */
+}
+
+/* Status badges */
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600; /* Make status text bolder */
+}
+
+.status.pending {
+  background: #fff8e1;
+  color: #f57c00;
+}
+
+.status.accepted, .status.online {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status.rejected, .status.offline {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+/* Pharmacy Management specific styles */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stat-box {
+  background: #6c5ce7;
+  color: white;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.stat-box h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.stat-box p {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.charts-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.chart-box {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chart-box h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Form styles */
+.management-form {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: transparent;
+  color: #000;
+}
+
+.form-row textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Button styles */
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.button-group button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.button-group button:hover {
+  opacity: 0.9;
+}
+
+.submit, .save {
+  background: #4caf50;
+}
+
+.update {
+  background: #2196f3;
+}
+
+.delete {
+  background: #f44336;
+}
+
+.generate-report {
+  padding: 12px 24px;
+  background: #6c5ce7;
+  margin: 10px 0;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    width: 240px;
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .menu-item .label {
+    display: none;
+  }
+}
+
+/* Chart section text */
+.chart-header h3 {
+  color: #000;
+  font-weight: 600;
+}
+
+.date-range {
+  color: #333;
+  font-weight: 500;
+}
+
+.chart-stats div p {
+  color: #333;
+  font-weight: 500;
+}
+
+.chart-stats div h3 {
+  color: #000;
+  font-weight: 600;
+}
+
+/* Section headers */
+h1, h2, h3, h4, h5, h6 {
+  color: #000;
+  font-weight: 600;
+}
+
+/* Stats box - keep white text */
+.stat-box * {
+  color: white; /* Keep stat box text white */
+}
+
+/* Button text - keep white */
+.button-group button,
+.generate-report {
+  color: white;
+  font-weight: 500;
+}
+
+/* Select dropdowns */
+select {
+  color: #000;
+  background-color: white;
+  font-weight: 500;
+  padding: 5px;
+}
+
+/* Placeholder text */
+::placeholder {
+  color: #666;
+}
+
+/* Table header row */
+thead tr {
+  background: #f8f9fa;
+}
+
+thead th {
+  color: #000;
+  font-weight: 600;
+}
+
+/* Table data rows */
+tbody tr {
+  background: white;
+}
+
+tbody td {
+  color: #000;
+}
+
+/* Chart labels and text */
+.recharts-text {
+  fill: #000 !important; /* Make chart text black */
+}
+
+.recharts-tooltip-label,
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value {
+  color: #000;
+}
+
+/* Remove any potential wrapper margins */
+.dashboard-wrapper, 
+.content-wrapper {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure chart fills width */
+.patients-chart {
+  width: 100%;
+  margin: 0;
+  padding: 20px;
+  background: white;
+  border-radius: 20px;
+  box-sizing: border-box;
+}
+
+/* Ensure the root/app container allows absolute positioning */
+#root, 
+.app {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Remove default list styles */
+ul, ol {
+  list-style: none;
+}
+
+/* Remove default button styles */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Remove default input styles */
+input, select, textarea {
+  font: inherit;
+}
+
+/* Remove default link styles */
+a {
+  color: inherit;
+  text-decoration: none;
+} 
