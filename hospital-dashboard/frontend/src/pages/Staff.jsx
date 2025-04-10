@@ -13,7 +13,8 @@ const Staff = () => {
     contact: '',
     email: '',
     status: 'Active',
-    salary: ''
+    salary: '',
+    shift: 'Morning'
   });
 
   const [staff, setStaff] = useState([]);
@@ -96,7 +97,8 @@ const Staff = () => {
         contact: '',
         email: '',
         status: 'Active',
-        salary: ''
+        salary: '',
+        shift: 'Morning'
       });
       
       showSuccess('Staff registered successfully!');
@@ -131,7 +133,8 @@ const Staff = () => {
         contact: '',
         email: '',
         status: 'Active',
-        salary: ''
+        salary: '',
+        shift: 'Morning'
       });
       
       showSuccess('Staff updated successfully!');
@@ -166,10 +169,26 @@ const Staff = () => {
       contact: staffMember.contact,
       email: staffMember.email,
       status: staffMember.status,
-      salary: staffMember.salary || ''
+      salary: staffMember.salary || '',
+      shift: staffMember.shift || 'Morning'
     });
     setShowForm(true);
     setShowStaffList(false);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      role: 'Doctor',
+      specialization: '',
+      department: '',
+      contact: '',
+      email: '',
+      status: 'Active',
+      salary: '',
+      shift: 'Morning',
+    });
+    setSelectedStaff(null);
   };
 
   return (
@@ -182,18 +201,7 @@ const Staff = () => {
           onClick={() => {
             setShowForm(true);
             setShowStaffList(false);
-            // Clear selection when adding new staff
-            setSelectedStaff(null);
-            setFormData({
-              name: '',
-              role: 'Doctor',
-              specialization: '',
-              department: '',
-              contact: '',
-              email: '',
-              status: 'Active',
-              salary: ''
-            });
+            resetForm();
           }}
         >
           {selectedStaff ? 'Edit Staff' : 'Add New Staff'}
@@ -275,15 +283,20 @@ const Staff = () => {
             </div>
 
             <div className="form-row">
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                <option value="Active">Active</option>
-                <option value="On Leave">On Leave</option>
-                <option value="Resigned">Resigned</option>
-              </select>
+              <div className="form-group">
+                <label htmlFor="status">Status:</label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="form-input"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="On Leave">On Leave</option>
+                </select>
+              </div>
               <input
                 type="number"
                 name="salary"
@@ -293,6 +306,23 @@ const Staff = () => {
               />
             </div>
 
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="shift">Shift:</label>
+                <select
+                  id="shift"
+                  name="shift"
+                  value={formData.shift}
+                  onChange={handleInputChange}
+                  className="form-input"
+                >
+                  <option value="Morning">Morning</option>
+                  <option value="Afternoon">Afternoon</option>
+                  <option value="Evening">Evening</option>
+                </select>
+              </div>
+            </div>
+
             <div className="form-actions">
               <button type="submit" className="form-button submit-btn">
                 {selectedStaff ? 'Update Staff' : 'Add Staff'}
@@ -300,19 +330,7 @@ const Staff = () => {
               <button 
                 type="button"
                 className="form-button cancel-btn"
-                onClick={() => {
-                  setFormData({
-                    name: '',
-                    role: 'Doctor',
-                    specialization: '',
-                    department: '',
-                    contact: '',
-                    email: '',
-                    status: 'Active',
-                    salary: ''
-                  });
-                  setSelectedStaff(null);
-                }}
+                onClick={resetForm}
               >
                 Reset
               </button>
@@ -362,13 +380,14 @@ const Staff = () => {
                     <th>Contact</th>
                     <th>Email</th>
                     <th>Status</th>
+                    <th>Shift</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredStaff.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="no-data">No staff found</td>
+                      <td colSpan="9" className="no-data">No staff found</td>
                     </tr>
                   ) : (
                     filteredStaff.map(staffMember => (
@@ -382,6 +401,11 @@ const Staff = () => {
                         <td>
                           <span className={`status-badge status-${staffMember.status?.toLowerCase().replace(' ', '-')}`}>
                             {staffMember.status}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`shift-badge ${staffMember.shift ? staffMember.shift.toLowerCase() : 'morning'}`}>
+                          {staffMember.shift || 'Morning'}
                         </span>
                       </td>
                       <td>

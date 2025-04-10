@@ -1052,4 +1052,172 @@ tbody tr:hover {
 .edit-link:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(99, 102, 241, 0.25);
+}
+
+/* Allocated Beds Section */
+.allocated-beds-section {
+  margin-bottom: 30px;
+  background-color: #f7fafc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.allocated-beds-section h5 {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  color: #2d3748;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.allocated-beds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.allocated-bed-card {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.allocated-bed-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.allocated-bed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bed-number-badge {
+  background-color: #3182ce;
+  color: white;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.allocated-bed-body {
+  padding: 12px;
+}
+
+.allocated-bed-body .patient-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  color: #1a202c;
+}
+
+.allocated-bed-body .patient-details {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.allocated-bed-body .patient-type {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.allocated-bed-body .admission-date {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 8px;
+}
+
+.allocated-bed-footer {
+  padding: 12px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.allocated-bed-footer .view-link {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #edf2f7;
+  color: #3182ce;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.allocated-bed-footer .view-link:hover {
+  background-color: #e2e8f0;
+  text-decoration: none;
+}
+
+.no-allocated-beds {
+  text-align: center;
+  padding: 20px;
+  color: #718096;
+  font-style: italic;
+}
+
+/* Update existing patient-type styling */
+.patient-type {
+  font-size: 0.8rem;
+  color: #4a5568;
+  background: #f0f4f8;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin: 4px 0;
+  font-weight: 500;
+}
+
+/* Loading spinner for beds */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(47, 128, 237, 0.2);
+  border-radius: 50%;
+  border-top-color: #2F80ED;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.beds-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  color: #4a5568;
+  font-style: italic;
+  background-color: rgba(247, 250, 252, 0.5);
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+/* Improve bed map visualization */
+.bed-allocation-visual {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
 } 

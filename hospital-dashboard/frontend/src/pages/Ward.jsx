@@ -48,16 +48,17 @@ const Ward = () => {
       console.log('Fetched wards:', response.data);  // Debug log
       
       if (Array.isArray(response.data)) {
-        setWards(response.data);
+        const wardsData = response.data;
+        setWards(wardsData);
         
-        const totalWards = response.data.length;
-        const availableBeds = response.data.reduce(
+        const totalWards = wardsData.length;
+        const availableBeds = wardsData.reduce(
           (acc, ward) => acc + (ward.capacity - (ward.currentOccupancy || 0)), 
           0
         );
         const occupancyRate = Math.round(
-          (response.data.reduce((acc, ward) => acc + (ward.currentOccupancy || 0), 0) / 
-           response.data.reduce((acc, ward) => acc + ward.capacity, 0)) * 100
+          (wardsData.reduce((acc, ward) => acc + (ward.currentOccupancy || 0), 0) / 
+           wardsData.reduce((acc, ward) => acc + ward.capacity, 0)) * 100
         );
         
         setStats({
@@ -65,15 +66,17 @@ const Ward = () => {
           availableBeds,
           occupancyRate: isNaN(occupancyRate) ? 0 : occupancyRate
         });
+        
+        // After wards are loaded, fetch patients and bed allocations
+        await Promise.all([
+          fetchWardPatients(),
+          fetchBedAllocationData(wardsData)
+        ]);
       } else if (response.data.wards && Array.isArray(response.data.wards)) {
         setWards(response.data.wards);
       } else {
         throw new Error('Unexpected API response format');
       }
-
-      fetchWardPatients();
-      
-      fetchBedAllocationData();
     } catch (err) {
       console.error('Error fetching wards:', err);  // Debug log
       setError('Failed to fetch wards');
@@ -89,7 +92,6 @@ const Ward = () => {
       
       // Group patients by ward
       const patientsByWard = {};
-      const unallocatedPatients = [];
       
       patients.forEach(patient => {
         if (patient.patientType === 'Inpatient') {
@@ -99,15 +101,12 @@ const Ward = () => {
               patientsByWard[patient.wardId] = [];
             }
             patientsByWard[patient.wardId].push(patient);
-          } else {
-            // Unallocated inpatient (missing ward assignment or bed number)
-            unallocatedPatients.push(patient);
           }
         }
       });
       
+      console.log('Ward patients data:', patientsByWard);
       setWardPatients(patientsByWard);
-      setUnallocatedPatients(unallocatedPatients);
     } catch (error) {
       console.error('Error fetching patients:', error);
       setError('Failed to fetch patients data');
@@ -238,14 +237,17 @@ const Ward = () => {
     }
   };
 
-  const fetchBedAllocationData = async () => {
+  const fetchBedAllocationData = async (wardsData = null) => {
     try {
       const response = await axios.get('http://localhost:5000/api/patients');
       const patients = response.data;
       
       const bedAllocations = {};
       
-      wards.forEach(ward => {
+      // Use passed wards data or current state
+      const wardsToProcess = wardsData || wards;
+      
+      wardsToProcess.forEach(ward => {
         const wardId = ward._id;
         
         bedAllocations[wardId] = {
@@ -264,27 +266,51 @@ const Ward = () => {
         }
       });
       
-      patients.forEach(patient => {
-        if (patient.patientType === 'Inpatient' && patient.wardId && patient.bedNumber) {
-          const wardId = patient.wardId;
-          const bedNumber = parseInt(patient.bedNumber);
-          
-          if (bedAllocations[wardId] && bedNumber <= bedAllocations[wardId].capacity) {
-            const bedIndex = bedNumber - 1;
-            bedAllocations[wardId].beds[bedIndex] = {
-              bedNumber,
-              status: 'Occupied',
-              patient: {
-                id: patient._id,
-                name: patient.name,
-                age: patient.age,
-                gender: patient.gender,
-                admissionDate: patient.createdAt,
-                status: patient.status
-              }
-            };
-          }
+      // Filter only inpatients with ward/bed assignments
+      const activeInpatients = patients.filter(patient => {
+        // Check patient type and status
+        const isInpatient = patient.patientType === 'Inpatient';
+        const isNotDischarged = patient.status !== 'Discharged';
+        
+        // Check various possible ward ID fields (handle different data structures)
+        const hasWardId = patient.wardId || patient.assignedWard;
+        
+        // Check if bed number exists
+        const hasBedNumber = patient.bedNumber && parseInt(patient.bedNumber) > 0;
+        
+        return isInpatient && isNotDischarged && hasWardId && hasBedNumber;
+      });
+      
+      console.log('Active inpatients for bed allocation:', activeInpatients.length);
+      
+      // Process each qualifying patient
+      activeInpatients.forEach(patient => {
+        // Get wardId from either wardId or assignedWard field
+        const wardId = patient.wardId || (patient.assignedWard ? patient.assignedWard._id || patient.assignedWard : null);
+        const bedNumber = parseInt(patient.bedNumber);
+        
+        if (wardId && bedAllocations[wardId] && bedNumber && bedNumber <= bedAllocations[wardId].capacity) {
+          const bedIndex = bedNumber - 1;
+          bedAllocations[wardId].beds[bedIndex] = {
+            bedNumber,
+            status: 'Occupied',
+            patient: {
+              id: patient._id,
+              name: patient.name,
+              age: patient.age,
+              gender: patient.gender,
+              admissionDate: patient.createdAt || patient.dateAdmitted || new Date(),
+              status: patient.status || 'Admitted',
+              type: patient.patientType || 'Inpatient'
+            }
+          };
         }
+      });
+      
+      // Debug output
+      Object.keys(bedAllocations).forEach(wardId => {
+        const occupiedCount = bedAllocations[wardId].beds.filter(bed => bed.status === 'Occupied').length;
+        console.log(`Ward ${bedAllocations[wardId].wardNumber}: ${occupiedCount} occupied beds`);
       });
       
       setWardBedAllocations(bedAllocations);
@@ -297,6 +323,19 @@ const Ward = () => {
   const [wardBedAllocations, setWardBedAllocations] = useState({});
 
   const togglePatientsList = (wardId) => {
+    // If opening the ward, refresh the patient data
+    if (!showPatients[wardId]) {
+      // Refresh patient data for this specific ward
+      Promise.all([
+        fetchWardPatients(),
+        fetchBedAllocationData()
+      ]).then(() => {
+        console.log(`Refreshed data for ward ${wardId}`);
+      }).catch(err => {
+        console.error('Error refreshing ward data:', err);
+      });
+    }
+    
     setShowPatients(prev => ({
       ...prev,
       [wardId]: !prev[wardId]
@@ -354,52 +393,6 @@ const Ward = () => {
     toast.success('Exported occupied beds data to CSV');
   };
 
-  // Add this state for unallocated patients
-  const [unallocatedPatients, setUnallocatedPatients] = useState([]);
-
-  // Add this to display unallocated patients section
-  const renderUnallocatedPatients = () => (
-    <div className="unallocated-patients-section">
-      <h3>Unallocated Inpatients</h3>
-      {unallocatedPatients.length === 0 ? (
-        <p className="no-patients">No unallocated inpatients</p>
-      ) : (
-        <table className="data-table full-width">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Age/Gender</th>
-              <th>Patient ID</th>
-              <th>Status</th>
-              <th>Admission Date</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {unallocatedPatients.map(patient => (
-              <tr key={patient._id}>
-                <td>{patient.name}</td>
-                <td>{patient.age} / {patient.gender}</td>
-                <td>{patient._id.substring(0, 8)}...</td>
-                <td>
-                  <span className={`status-badge status-${(patient.status || 'admitted').toLowerCase()}`}>
-                    {patient.status || 'Admitted'}
-                  </span>
-                </td>
-                <td>{new Date(patient.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <Link to={`/patients/edit/${patient._id}`} className="edit-link">
-                    Allocate Bed
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-
   return (
     <div className="ward-management-page">
       <h2>Ward Management</h2>
@@ -436,9 +429,6 @@ const Ward = () => {
           <p>{stats.occupancyRate}%</p>
         </div>
       </div>
-
-      {/* Unallocated Patients Section */}
-      {renderUnallocatedPatients()}
 
       <div className="ward-form-container">
         <form onSubmit={handleSubmit}>
@@ -704,99 +694,146 @@ const Ward = () => {
                               <span className="patient-count">
                                 {wardBedAllocations[ward._id] ? 
                                   `${wardBedAllocations[ward._id].beds.filter(bed => bed.status === 'Occupied').length} / ${ward.capacity} beds occupied` : 
-                                  ''}
+                                  'Loading...'}
                               </span>
                             </h4>
                             
-                            {wardBedAllocations[ward._id] ? (
-                              <>
-                                {/* Occupied beds table - only shown if there are occupied beds */}
-                                {wardBedAllocations[ward._id].beds.some(bed => bed.status === 'Occupied') && (
-                                  <div className="occupied-beds-table-container">
-                                    <div className="table-header-actions">
-                                      <h5>Allocated Patients</h5>
-                                      <button 
-                                        className="export-button" 
-                                        onClick={() => exportToCSV(ward._id)}
-                                        title="Export to CSV"
-                                      >
-                                        <FaFileExport /> Export
-                                      </button>
-                                    </div>
-                                    <table className="occupied-beds-table">
-                                      <thead>
-                                        <tr>
-                                          <th>Bed #</th>
-                                          <th>Patient Name</th>
-                                          <th>Age/Gender</th>
-                                          <th>Admission Date</th>
-                                          <th>Status</th>
-                                          <th>Action</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {wardBedAllocations[ward._id].beds
-                                          .filter(bed => bed.status === 'Occupied' && bed.patient)
-                                          .sort((a, b) => a.bedNumber - b.bedNumber)
-                                          .map(bed => (
-                                            <tr key={`occupied-${bed.bedNumber}`}>
-                                              <td className="bed-number-cell">{bed.bedNumber}</td>
-                                              <td>{bed.patient.name}</td>
-                                              <td>{bed.patient.age} / {bed.patient.gender}</td>
-                                              <td>{new Date(bed.patient.admissionDate).toLocaleDateString()}</td>
-                                              <td>
-                                                <span className={`status-badge ${bed.patient.status.toLowerCase()}`}>
-                                                  {bed.patient.status}
-                                                </span>
-                                              </td>
-                                              <td>
-                                                <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
-                                                  View Details
-                                                </Link>
-                                              </td>
-                                            </tr>
-                                          ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
-
-                                <div className="bed-allocation-visual">
-                                  <h5>Bed Map</h5>
-                                  <div className="beds-grid">
-                                    {wardBedAllocations[ward._id].beds
-                                      .sort((a, b) => a.bedNumber - b.bedNumber)
-                                      .map((bed, index) => (
-                                        <div 
-                                          key={bed.bedNumber} 
-                                          className={`bed-box ${bed.status.toLowerCase()}`}
-                                          style={{ '--index': index }}
-                                        >
-                                          <div className="bed-number">Bed #{bed.bedNumber}</div>
-                                          {bed.status === 'Occupied' && bed.patient ? (
-                                            <div className="patient-info">
+                            {/* Always show this section, but with appropriate loading state */}
+                            <div className="allocated-beds-section">
+                              <h5>Allocated Beds</h5>
+                              <div className="allocated-beds-list">
+                                {wardBedAllocations[ward._id] ? (
+                                  wardBedAllocations[ward._id].beds.some(bed => bed.status === 'Occupied') ? (
+                                    <div className="allocated-beds-grid">
+                                      {wardBedAllocations[ward._id].beds
+                                        .filter(bed => bed.status === 'Occupied' && bed.patient)
+                                        .sort((a, b) => a.bedNumber - b.bedNumber)
+                                        .map(bed => (
+                                          <div key={`allocated-${bed.bedNumber}`} className="allocated-bed-card">
+                                            <div className="allocated-bed-header">
+                                              <span className="bed-number-badge">Bed #{bed.bedNumber}</span>
+                                              <span className={`status-badge ${bed.patient.status.toLowerCase()}`}>
+                                                {bed.patient.status}
+                                              </span>
+                                            </div>
+                                            <div className="allocated-bed-body">
                                               <div className="patient-name">{bed.patient.name}</div>
                                               <div className="patient-details">
                                                 <span>{bed.patient.age}y, {bed.patient.gender}</span>
-                                                <span className={`patient-status status-${bed.patient.status?.toLowerCase()}`}>
-                                                  {bed.patient.status}
-                                                </span>
                                               </div>
+                                              <div className="patient-type">
+                                                Type: {bed.patient.type || 'Inpatient'}
+                                              </div>
+                                              <div className="admission-date">
+                                                Admitted: {new Date(bed.patient.admissionDate).toLocaleDateString()}
+                                              </div>
+                                            </div>
+                                            <div className="allocated-bed-footer">
                                               <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
                                                 View Details
                                               </Link>
                                             </div>
-                                          ) : (
-                                            <div className="bed-available">Available</div>
-                                          )}
-                                        </div>
-                                      ))}
+                                          </div>
+                                        ))}
+                                    </div>
+                                  ) : (
+                                    <p className="no-allocated-beds">No beds currently allocated in this ward</p>
+                                  )
+                                ) : (
+                                  <div className="beds-loading">
+                                    <span className="loading-spinner"></span>
+                                    Loading allocated beds...
                                   </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Occupied beds table - only shown if there are occupied beds */}
+                            {wardBedAllocations[ward._id].beds.some(bed => bed.status === 'Occupied') && (
+                              <div className="occupied-beds-table-container">
+                                <div className="table-header-actions">
+                                  <h5>Allocated Patients</h5>
+                                  <button 
+                                    className="export-button" 
+                                    onClick={() => exportToCSV(ward._id)}
+                                    title="Export to CSV"
+                                  >
+                                    <FaFileExport /> Export
+                                  </button>
                                 </div>
-                              </>
-                            ) : (
-                              <div className="beds-loading">Loading bed allocation...</div>
+                                <table className="occupied-beds-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Bed #</th>
+                                      <th>Patient Name</th>
+                                      <th>Age/Gender</th>
+                                      <th>Admission Date</th>
+                                      <th>Status</th>
+                                      <th>Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {wardBedAllocations[ward._id].beds
+                                      .filter(bed => bed.status === 'Occupied' && bed.patient)
+                                      .sort((a, b) => a.bedNumber - b.bedNumber)
+                                      .map(bed => (
+                                        <tr key={`occupied-${bed.bedNumber}`}>
+                                          <td className="bed-number-cell">{bed.bedNumber}</td>
+                                          <td>{bed.patient.name}</td>
+                                          <td>{bed.patient.age} / {bed.patient.gender}</td>
+                                          <td>{new Date(bed.patient.admissionDate).toLocaleDateString()}</td>
+                                          <td>
+                                            <span className={`status-badge ${bed.patient.status.toLowerCase()}`}>
+                                              {bed.patient.status}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
+                                              View Details
+                                            </Link>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             )}
+
+                            <div className="bed-allocation-visual">
+                              <h5>Bed Map</h5>
+                              <div className="beds-grid">
+                                {wardBedAllocations[ward._id].beds
+                                  .sort((a, b) => a.bedNumber - b.bedNumber)
+                                  .map((bed, index) => (
+                                    <div 
+                                      key={bed.bedNumber} 
+                                      className={`bed-box ${bed.status.toLowerCase()}`}
+                                      style={{ '--index': index }}
+                                    >
+                                      <div className="bed-number">Bed #{bed.bedNumber}</div>
+                                      {bed.status === 'Occupied' && bed.patient ? (
+                                        <div className="patient-info">
+                                          <div className="patient-name">{bed.patient.name}</div>
+                                          <div className="patient-details">
+                                            <span>{bed.patient.age}y, {bed.patient.gender}</span>
+                                            <span className={`patient-status status-${bed.patient.status?.toLowerCase()}`}>
+                                              {bed.patient.status}
+                                            </span>
+                                          </div>
+                                          <div className="patient-type">
+                                            {bed.patient.type || 'Inpatient'}
+                                          </div>
+                                          <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
+                                            View Details
+                                          </Link>
+                                        </div>
+                                      ) : (
+                                        <div className="bed-available">Available</div>
+                                      )}
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
                             
                             {(!wardPatients[ward._id] || wardPatients[ward._id].length === 0) && 
                              (!wardBedAllocations[ward._id] || wardBedAllocations[ward._id].beds.every(bed => bed.status === 'Available')) && (

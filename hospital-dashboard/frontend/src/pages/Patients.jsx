@@ -5,6 +5,89 @@ import '../styles/management.css';
 import './Patients.css';
 import { useNotification } from '../contexts/NotificationContext';
 
+// Add TableStyle component to fix alignment
+const TableStyle = () => (
+  <style jsx="true">{`
+    .data-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .data-table th,
+    .data-table td {
+      padding: 12px 8px;
+      text-align: center;
+      vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .data-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .data-table th:first-child,
+    .data-table td:first-child {
+      width: 100px; /* Patient ID */
+    }
+    
+    .data-table th:nth-child(2),
+    .data-table td:nth-child(2) {
+      width: 150px; /* Name */
+      text-align: left;
+    }
+    
+    .data-table th:nth-child(3),
+    .data-table td:nth-child(3) {
+      width: 70px; /* Age */
+    }
+    
+    .data-table th:nth-child(4),
+    .data-table td:nth-child(4) {
+      width: 100px; /* Gender */
+    }
+    
+    .data-table th:nth-child(5),
+    .data-table td:nth-child(5) {
+      width: 150px; /* Contact */
+    }
+    
+    .data-table th:nth-child(6),
+    .data-table td:nth-child(6) {
+      width: 120px; /* Type */
+    }
+    
+    .data-table th:nth-child(7),
+    .data-table td:nth-child(7) {
+      width: 150px; /* Ward/Bed */
+    }
+    
+    .data-table th:nth-child(8),
+    .data-table td:nth-child(8) {
+      width: 120px; /* Status */
+    }
+    
+    .data-table th:nth-child(9),
+    .data-table td:nth-child(9) {
+      width: 140px; /* Actions */
+    }
+    
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+  `}</style>
+);
+
 const Patients = () => {
   const { showSuccess, showError, showInfo } = useNotification();
   const [patients, setPatients] = useState([]);
@@ -12,8 +95,11 @@ const Patients = () => {
   const [showExistingPatients, setShowExistingPatients] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPatients, setFilteredPatients] = useState([]);
+  const [allWards, setAllWards] = useState([]);
   const [availableWards, setAvailableWards] = useState([]);
   const [selectedWard, setSelectedWard] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingPatientId, setEditingPatientId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -27,6 +113,13 @@ const Patients = () => {
     bedNumber: ''
   });
   const [availableBeds, setAvailableBeds] = useState([]);
+  // Add new state for bed assignment modal
+  const [showBedAssignModal, setShowBedAssignModal] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [bedAssignFormData, setBedAssignFormData] = useState({
+    wardId: '',
+    bedNumber: ''
+  });
 
   // Government schemes list
   const governmentSchemes = {
@@ -41,8 +134,64 @@ const Patients = () => {
   };
 
   useEffect(() => {
-    fetchPatients();
-    fetchAvailableWards();
+    // Fetch all wards first, then patients
+    const loadData = async () => {
+      try {
+        // First get all wards
+        const wardsResponse = await axios.get('http://localhost:5000/api/wards');
+        const allWardsData = wardsResponse.data;
+        
+        // Set all wards for lookup
+        setAllWards(allWardsData);
+        console.log("All wards loaded:", allWardsData);
+        
+        // Filter wards with available beds for the form
+        const wardsWithBeds = allWardsData.filter(ward => 
+          ward.capacity > ward.currentOccupancy
+        );
+        setAvailableWards(wardsWithBeds);
+        
+        // Then get all patients and attach ward info
+        const patientsResponse = await patientApi.getAllPatients();
+        
+        // Process the data to ensure patientType and ward info are set correctly
+        const processedPatients = patientsResponse.data.map(patient => {
+          // Make a copy to avoid modifying the original
+          const processedPatient = {...patient};
+          
+          // Set patient type
+          if (!processedPatient.patientType) {
+            processedPatient.patientType = processedPatient.wardId ? 'Inpatient' : 'Outpatient';
+          }
+          
+          // Add ward information for display purposes
+          if (processedPatient.patientType === 'Inpatient') {
+            // Find matching ward
+            if (processedPatient.wardId) {
+              const matchingWard = allWardsData.find(w => w._id === processedPatient.wardId);
+              if (matchingWard) {
+                console.log(`Found ward match for patient ${processedPatient.name}:`, matchingWard.wardNumber);
+                processedPatient.wardNumber = matchingWard.wardNumber;
+                processedPatient.wardType = matchingWard.wardType;
+              } else {
+                console.log(`No ward match found for patient ${processedPatient.name} with ward ID:`, processedPatient.wardId);
+              }
+            }
+          }
+          
+          return processedPatient;
+        });
+        
+        console.log("Processed patients with ward info:", processedPatients);
+        setPatients(processedPatients);
+        setFilteredPatients(processedPatients);
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+        showError("Failed to load data. Please refresh the page.");
+      }
+    };
+    
+    loadData();
   }, []);
 
   // Update filtered patients whenever patients or search term changes
@@ -55,33 +204,6 @@ const Patients = () => {
     setFilteredPatients(filtered);
   }, [patients, searchTerm]);
 
-  const fetchPatients = async () => {
-    try {
-      // Using the new API service
-      const response = await patientApi.getAllPatients();
-      setPatients(response.data);
-      setFilteredPatients(response.data);
-    } catch (error) {
-      console.error('Error fetching patients:', error);
-      showError('Failed to fetch patients data');
-    }
-  };
-
-  const fetchAvailableWards = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/wards');
-      // Filter wards that have available beds
-      const wardsWithBeds = response.data.filter(ward => 
-        ward.capacity > ward.currentOccupancy
-      );
-      setAvailableWards(wardsWithBeds);
-    } catch (error) {
-      console.error('Error fetching wards:', error);
-      showError('Failed to fetch available wards');
-    }
-  };
-
-  // Update to fetch the available beds for a selected ward
   const fetchAvailableBedsForWard = async (wardId) => {
     if (!wardId) return;
     
@@ -162,8 +284,14 @@ const Patients = () => {
         return;
       }
 
+      // Make sure patientType is explicitly set
+      const patientData = {
+        ...formData,
+        patientType: formData.patientType || 'Outpatient' // Default to Outpatient if not set
+      };
+
       // Using the new API service
-      const response = await patientApi.createPatient(formData);
+      const response = await patientApi.createPatient(patientData);
       
       // If patient is inpatient, update the ward's occupancy
       if (formData.patientType === 'Inpatient' && formData.wardId) {
@@ -189,7 +317,11 @@ const Patients = () => {
       }
       
       // Update patients list with the new patient
-      setPatients([...patients, response.data]);
+      const newPatient = {
+        ...response.data,
+        patientType: patientData.patientType // Ensure patientType is included
+      };
+      setPatients([...patients, newPatient]);
       
       // Reset form
       setFormData({
@@ -217,13 +349,54 @@ const Patients = () => {
 
   const handleUpdate = async (id) => {
     try {
+      // Validate form if patient is inpatient
+      if (formData.patientType === 'Inpatient' && (!formData.wardId || !formData.bedNumber)) {
+        showError('Please select a ward and bed number for inpatient');
+        return;
+      }
+
+      // Make sure patientType is explicitly set
+      const patientData = {
+        ...formData,
+        patientType: formData.patientType || 'Outpatient' // Default to Outpatient if not set
+      };
+
       // Using the new API service
-      const response = await patientApi.updatePatient(id, formData);
-      setPatients(patients.map(patient => patient._id === id ? response.data : patient));
+      const response = await patientApi.updatePatient(id, patientData);
+      
+      // Process the updated patient to ensure it has patientType
+      const updatedPatient = {
+        ...response.data,
+        patientType: patientData.patientType
+      };
+      
+      // Update the patients list
+      setPatients(patients.map(patient => patient._id === id ? updatedPatient : patient));
+      
+      // Reset form and editing state
+      setFormData({
+        name: '',
+        age: '',
+        gender: '',
+        contact: '',
+        address: '',
+        medicalHistory: '',
+        status: 'Admitted',
+        patientType: 'Outpatient',
+        wardId: '',
+        bedNumber: ''
+      });
+      setSelectedWard('');
+      setIsEditing(false);
+      setEditingPatientId(null);
+      
+      // Show success message and switch to patients list
+      setShowForm(false);
+      setShowExistingPatients(true);
       showSuccess('Patient updated successfully!');
     } catch (error) {
       console.error('Error updating patient:', error);
-      showError('Failed to update patient');
+      showError('Failed to update patient: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -243,6 +416,174 @@ const Patients = () => {
     setSearchTerm(e.target.value);
   };
 
+  // Function to refresh patient data
+  const refreshPatients = async () => {
+    try {
+      // Get all patients and attach ward info
+      const patientsResponse = await patientApi.getAllPatients();
+      
+      // Process the data to ensure patientType and ward info are set correctly
+      const processedPatients = patientsResponse.data.map(patient => {
+        // Make a copy to avoid modifying the original
+        const processedPatient = {...patient};
+        
+        // Set patient type
+        if (!processedPatient.patientType) {
+          processedPatient.patientType = processedPatient.wardId ? 'Inpatient' : 'Outpatient';
+        }
+        
+        // Add ward information for display purposes
+        if (processedPatient.patientType === 'Inpatient') {
+          // Find matching ward
+          if (processedPatient.wardId) {
+            const matchingWard = allWards.find(w => w._id === processedPatient.wardId);
+            if (matchingWard) {
+              console.log(`Found ward match for patient ${processedPatient.name}:`, matchingWard.wardNumber);
+              processedPatient.wardNumber = matchingWard.wardNumber;
+              processedPatient.wardType = matchingWard.wardType;
+            } else {
+              console.log(`No ward match found for patient ${processedPatient.name} with ward ID:`, processedPatient.wardId);
+            }
+          }
+        }
+        
+        return processedPatient;
+      });
+      
+      console.log("Refreshed patients with ward info:", processedPatients);
+      setPatients(processedPatients);
+      setFilteredPatients(processedPatients);
+    } catch (error) {
+      console.error("Error refreshing patients:", error);
+      showError("Failed to refresh patient data");
+    }
+  };
+
+  const fetchAvailableWards = async () => {
+    try {
+      const wardsResponse = await axios.get('http://localhost:5000/api/wards');
+      const allWardsData = wardsResponse.data;
+      
+      // Filter wards with available beds
+      const wardsWithBeds = allWardsData.filter(ward => 
+        ward.capacity > ward.currentOccupancy
+      );
+      setAvailableWards(wardsWithBeds);
+    } catch (error) {
+      console.error('Error fetching available wards:', error);
+      showError('Failed to fetch available wards');
+    }
+  };
+
+  // Add new function to handle bed assignment
+  const handleAssignBed = (patient) => {
+    setSelectedPatient(patient);
+    setBedAssignFormData({
+      wardId: '',
+      bedNumber: ''
+    });
+    fetchAvailableWards();
+    setShowBedAssignModal(true);
+  };
+
+  // Add function to handle ward selection in the bed assignment modal
+  const handleBedAssignInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'wardId') {
+      setBedAssignFormData(prev => ({
+        ...prev,
+        [name]: value,
+        bedNumber: '' // Reset bed selection when ward changes
+      }));
+      
+      // Fetch available beds for this ward
+      fetchAvailableBedsForWard(value);
+    } else {
+      setBedAssignFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  // Add function to save the bed assignment
+  const saveBedAssignment = async () => {
+    if (!selectedPatient || !bedAssignFormData.wardId || !bedAssignFormData.bedNumber) {
+      showError('Please select both ward and bed number');
+      return;
+    }
+
+    try {
+      // Update the patient with new ward and bed information
+      const updatedPatientData = {
+        ...selectedPatient,
+        patientType: 'Inpatient',
+        wardId: bedAssignFormData.wardId,
+        bedNumber: bedAssignFormData.bedNumber
+      };
+
+      const response = await patientApi.updatePatient(selectedPatient._id, updatedPatientData);
+      
+      // Process the updated patient
+      const updatedPatient = {
+        ...response.data,
+        patientType: 'Inpatient'
+      };
+      
+      // Update the patients list
+      setPatients(patients.map(patient => 
+        patient._id === selectedPatient._id ? updatedPatient : patient
+      ));
+      
+      // Update the ward's occupancy
+      try {
+        // Get the current ward data
+        const wardResponse = await axios.get(`http://localhost:5000/api/wards/${bedAssignFormData.wardId}`);
+        const currentWard = wardResponse.data;
+        
+        // Update the ward's occupancy
+        const updatedWard = {
+          ...currentWard,
+          currentOccupancy: currentWard.currentOccupancy + 1
+        };
+        
+        await axios.put(`http://localhost:5000/api/wards/${bedAssignFormData.wardId}`, updatedWard);
+      } catch (wardError) {
+        console.error('Error updating ward occupancy:', wardError);
+        showError('Bed assigned but failed to update ward occupancy');
+      }
+
+      // Close modal and reset
+      setShowBedAssignModal(false);
+      setSelectedPatient(null);
+      refreshPatients(); // Refresh the patient list to show updated data
+      showSuccess('Bed assigned successfully!');
+    } catch (error) {
+      console.error('Error assigning bed:', error);
+      showError('Failed to assign bed: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Add this function somewhere after the component declaration, but before the return statement
+  const generatePatientId = (patient) => {
+    if (!patient || !patient.name || !patient.age || !patient.gender) {
+      return 'N/A';
+    }
+    
+    // Get first 2 digits of age (padded with 0 if needed)
+    const ageStr = patient.age.toString().padStart(2, '0').substring(0, 2);
+    
+    // Get first 3 characters of name (uppercase)
+    const namePrefix = patient.name.substring(0, 3).toUpperCase();
+    
+    // Get first character of gender (lowercase)
+    const genderChar = patient.gender.toLowerCase().startsWith('m') ? 'm' : 'f';
+    
+    // Combine to form the 6-character ID
+    return `${ageStr}${namePrefix}${genderChar}`;
+  };
+
   return (
     <div className="management-page">
       <h2>Patient Management</h2>
@@ -253,6 +594,20 @@ const Patients = () => {
           onClick={() => {
             setShowForm(true);
             setShowExistingPatients(false);
+            setIsEditing(false);
+            setEditingPatientId(null);
+            setFormData({
+              name: '',
+              age: '',
+              gender: '',
+              contact: '',
+              address: '',
+              medicalHistory: '',
+              status: 'Admitted',
+              patientType: 'Outpatient',
+              wardId: '',
+              bedNumber: ''
+            });
           }}
         >
           New Patient
@@ -262,6 +617,8 @@ const Patients = () => {
           onClick={() => {
             setShowExistingPatients(true);
             setShowForm(false);
+            // Refresh patient data when viewing existing patients
+            refreshPatients();
           }}
         >
           Existing Patients
@@ -297,13 +654,17 @@ const Patients = () => {
               min="0"
               max="120"
             />
-            <input
-              type="text"
+            <select
               name="gender"
-              placeholder="Gender"
               value={formData.gender}
               onChange={handleInputChange}
-            />
+              required
+            >
+              <option value="">-- Select Gender --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
 
           <div className="form-row">
@@ -418,9 +779,9 @@ const Patients = () => {
             <button 
               type="button" 
               className="form-button submit-btn" 
-              onClick={handleAdd}
+              onClick={isEditing ? () => handleUpdate(editingPatientId) : handleAdd}
             >
-              Add Patient
+              {isEditing ? 'Update Patient' : 'Add Patient'}
             </button>
             <button 
               type="button" 
@@ -439,9 +800,13 @@ const Patients = () => {
                   bedNumber: ''
                 });
                 setSelectedWard('');
+                if (isEditing) {
+                  setIsEditing(false);
+                  setEditingPatientId(null);
+                }
               }}
             >
-              Reset
+              {isEditing ? 'Cancel' : 'Reset'}
             </button>
           </div>
         </div>
@@ -460,6 +825,7 @@ const Patients = () => {
           </div>
           
           <div className="table-container">
+            <TableStyle />
             <table className="data-table">
               <thead>
                 <tr>
@@ -483,17 +849,53 @@ const Patients = () => {
                   filteredPatients.map(patient => (
                     <tr key={patient._id}>
                       <td>
-                        <span className="patient-id">{patient._id?.substring(0, 8)}</span>
+                        <span className="patient-id">{generatePatientId(patient)}</span>
                       </td>
                       <td>{patient.name}</td>
                       <td>{patient.age}</td>
                       <td>{patient.gender}</td>
-                      <td>{patient.contact}</td>
-                      <td>{patient.patientType || 'Outpatient'}</td>
+                      <td>{patient.contact && patient.contact.match(/^[0-9]{10}$/) ? patient.contact : '-'}</td>
                       <td>
-                        {patient.patientType === 'Inpatient' ? 
-                          (patient.wardId ? `Ward: ${availableWards.find(w => w._id === patient.wardId)?.wardNumber || 'Unknown'}, Bed: ${patient.bedNumber}` : 'Not assigned') : 
-                          'N/A'}
+                        <span className={`patient-type-badge ${patient.patientType === 'Inpatient' ? 'inpatient' : 'outpatient'}`}>
+                          {patient.patientType === 'Inpatient' ? 'Inpatient' : 'Outpatient'}
+                        </span>
+                      </td>
+                      <td>
+                        {patient.patientType === 'Inpatient' ? (
+                          <div className="ward-bed-display">
+                            {patient.wardId ? (
+                              <>
+                                <div className="ward-display">
+                                  <span className="info-label">Ward:</span> 
+                                  <span className="info-value">
+                                    {patient.wardNumber || 
+                                     (allWards.find(w => w._id === patient.wardId)?.wardNumber) || 
+                                     'Unknown'}
+                                  </span>
+                                </div>
+                                <div className="bed-display">
+                                  <span className="info-label">Bed:</span> 
+                                  <span className="info-value">
+                                    {patient.bedNumber ? (
+                                      isNaN(patient.bedNumber) ? patient.bedNumber : `#${patient.bedNumber}`
+                                    ) : (
+                                      'Not assigned'
+                                    )}
+                                  </span>
+                                </div>
+                                {(!patient.wardNumber && patient.wardId) && (
+                                  <div className="debug-info">
+                                    Ward ID: {patient.wardId.substring(0, 8)}...
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="not-assigned">Not assigned</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="not-applicable">N/A</span>
+                        )}
                       </td>
                       <td>
                         <span className={`status-badge status-${patient.status?.toLowerCase()}`}>
@@ -510,12 +912,29 @@ const Patients = () => {
                                 patientType: patient.patientType || 'Outpatient'
                               });
                               setSelectedWard(patient.wardId || '');
+                              setIsEditing(true);
+                              setEditingPatientId(patient._id);
                               setShowForm(true);
                               setShowExistingPatients(false);
+                              
+                              // If patient is inpatient and has a ward, fetch available beds
+                              if (patient.patientType === 'Inpatient' && patient.wardId) {
+                                fetchAvailableBedsForWard(patient.wardId);
+                              }
                             }}
                           >
                             Edit
                           </button>
+                          {/* Add Assign Bed button for inpatients with no assigned beds */}
+                          {patient.patientType === 'Inpatient' && 
+                           (!patient.bedNumber || !patient.wardId) && (
+                            <button 
+                              className="assign-bed-btn"
+                              onClick={() => handleAssignBed(patient)}
+                            >
+                              Assign Bed
+                            </button>
+                          )}
                           <button 
                             className="delete-btn"
                             onClick={() => {
@@ -533,6 +952,85 @@ const Patients = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Add Bed Assignment Modal */}
+      {showBedAssignModal && selectedPatient && (
+        <div className="modal-overlay">
+          <div className="bed-assignment-modal">
+            <h3>Assign Bed for {selectedPatient.name}</h3>
+            
+            <div className="modal-form">
+              <div className="form-group">
+                <label>Select Ward</label>
+                <select
+                  name="wardId"
+                  value={bedAssignFormData.wardId}
+                  onChange={handleBedAssignInputChange}
+                  required
+                >
+                  <option value="">-- Select Ward --</option>
+                  {availableWards.map(ward => {
+                    const availableBedCount = ward.capacity - ward.currentOccupancy;
+                    
+                    return (
+                      <option key={ward._id} value={ward._id} disabled={availableBedCount === 0}>
+                        {ward.wardNumber} - {ward.wardType} 
+                        {availableBedCount > 0 ? (
+                          <span> (Available: {availableBedCount} beds)</span>
+                        ) : (
+                          <span> (Full)</span>
+                        )}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label>Select Bed</label>
+                <select
+                  name="bedNumber"
+                  value={bedAssignFormData.bedNumber}
+                  onChange={handleBedAssignInputChange}
+                  disabled={!bedAssignFormData.wardId || availableBeds.length === 0}
+                  required
+                >
+                  <option value="">-- Select Bed --</option>
+                  {availableBeds.map(bed => (
+                    <option key={bed.id} value={bed.number}>
+                      Bed #{bed.number}
+                    </option>
+                  ))}
+                </select>
+                {bedAssignFormData.wardId && availableBeds.length === 0 && (
+                  <div className="no-beds-warning">
+                    No beds available in this ward
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  className="save-btn"
+                  onClick={saveBedAssignment}
+                  disabled={!bedAssignFormData.wardId || !bedAssignFormData.bedNumber}
+                >
+                  Assign Bed
+                </button>
+                <button 
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowBedAssignModal(false);
+                    setSelectedPatient(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

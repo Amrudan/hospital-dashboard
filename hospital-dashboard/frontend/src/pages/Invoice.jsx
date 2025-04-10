@@ -82,10 +82,11 @@ const Invoice = () => {
 
   const fetchInvoices = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/invoices');
+      const response = await axios.get('http://localhost:5000/api/invoices');
       setRecentInvoices(response.data);
     } catch (error) {
       console.error("Error fetching invoices:", error);
+      alert("Failed to fetch invoices. Please try again.");
     }
   };
 
@@ -105,7 +106,7 @@ const Invoice = () => {
         setInvoiceData({
           ...invoiceData,
           [name]: value,
-          patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
+          patientName: selectedPatient.name,
           governmentScheme: selectedPatient.governmentScheme || 'None',
           totalAmount: discountedAmount
         });
@@ -131,12 +132,46 @@ const Invoice = () => {
     }
 
     try {
+      // Create proper invoice object according to the backend model
+      const invoiceToSave = {
+        patient: invoiceData.patientId,
+        patientName: invoiceData.patientName,
+        doctorName: invoiceData.doctorName,
+        labName: invoiceData.labName,
+        treatment: invoiceData.treatment,
+        wardNumber: invoiceData.wardNumber || '',
+        governmentScheme: invoiceData.governmentScheme || 'None',
+        // Create proper invoice structure that matches the backend model
+        invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+        issueDate: new Date(),
+        dueDate: new Date(Date.now() + 30*24*60*60*1000), // 30 days from now
+        items: [
+          {
+            description: invoiceData.treatment,
+            quantity: 1,
+            unitPrice: treatmentCosts[invoiceData.treatment] || 0,
+            amount: parseFloat(invoiceData.totalAmount),
+            type: 'Consultation'
+          }
+        ],
+        subtotal: treatmentCosts[invoiceData.treatment] || 0,
+        discount: treatmentCosts[invoiceData.treatment] - parseFloat(invoiceData.totalAmount) || 0,
+        total: parseFloat(invoiceData.totalAmount),
+        paymentStatus: 'Unpaid'
+      };
+
       if (editingIndex !== null) {
-        await axios.put(`http://localhost:5000/invoices/${recentInvoices[editingIndex]._id}`, invoiceData);
+        await axios.put(`http://localhost:5000/api/invoices/${recentInvoices[editingIndex]._id}`, invoiceToSave);
+        alert("Invoice updated successfully!");
       } else {
-        await axios.post('http://localhost:5000/invoices', invoiceData);
+        await axios.post('http://localhost:5000/api/invoices', invoiceToSave);
+        alert("Invoice added successfully!");
       }
+      
+      // Refresh the invoices list
       fetchInvoices();
+      
+      // Reset form data
       setInvoiceData({
         patientId: "",
         patientName: "",
@@ -150,6 +185,7 @@ const Invoice = () => {
       setEditingIndex(null);
     } catch (error) {
       console.error("Error saving invoice:", error);
+      alert(`Failed to save invoice: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -160,10 +196,12 @@ const Invoice = () => {
 
   const handleDelete = async (index) => {
     try {
-      await axios.delete(`http://localhost:5000/invoices/${recentInvoices[index]._id}`);
+      await axios.delete(`http://localhost:5000/api/invoices/${recentInvoices[index]._id}`);
       fetchInvoices();
+      alert("Invoice deleted successfully!");
     } catch (error) {
       console.error("Error deleting invoice:", error);
+      alert("Failed to delete invoice. Please try again.");
     }
   };
 
@@ -373,7 +411,7 @@ const Invoice = () => {
               <option value="">Select Patient</option>
               {patients.map(patient => (
                 <option key={patient._id} value={patient._id}>
-                  {patient.firstName} {patient.lastName} - {patient.governmentScheme || 'No Scheme'}
+                  {patient.name} - {patient.contact}
                 </option>
               ))}
             </select>

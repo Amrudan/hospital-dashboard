@@ -182,13 +182,60 @@
   
   th, td {
     padding: 12px;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid #ddd;
+    vertical-align: middle;
   }
   
   th {
     background-color: #f8f9fa;
     font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .data-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .data-table th:first-child,
+  .data-table td:first-child {
+    width: 120px;
+  }
+  
+  .data-table th:nth-child(2),
+  .data-table td:nth-child(2) {
+    width: 150px;
+    text-align: left;
+  }
+  
+  .data-table th:nth-child(3),
+  .data-table td:nth-child(3) {
+    width: 60px;
+  }
+  
+  .data-table th:nth-child(4),
+  .data-table td:nth-child(4) {
+    width: 100px;
+  }
+  
+  .data-table th:nth-child(5),
+  .data-table td:nth-child(5) {
+    width: 120px;
+  }
+  
+  .data-table th:nth-child(6),
+  .data-table td:nth-child(6) {
+    width: 100px;
+  }
+  
+  .data-table th:nth-child(7),
+  .data-table td:nth-child(7) {
+    width: 120px;
   }
   
   .edit-btn,
@@ -210,6 +257,54 @@
   
   button:hover {
     opacity: 0.8;
+  }
+  
+  .data-table tr td:nth-child(6) {
+    font-weight: 600;
+  }
+  
+  .data-table tr td:nth-child(6):contains('Inpatient') {
+    color: #2F80ED;
+  }
+  
+  .data-table tr td:nth-child(6):contains('Outpatient') {
+    color: #56CCF2;
+  }
+  
+  /* Add clear styling to make patient rows more distinct */
+  .data-table tr {
+    transition: all 0.2s ease;
+  }
+  
+  .data-table tr:hover {
+    background-color: #f8f9ff;
+    transform: scale(1.005);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    z-index: 5;
+    position: relative;
+  }
+  
+  /* Style for patient type badge */
+  .patient-type-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    width: 100px;
+  }
+  
+  .patient-type-badge.inpatient {
+    background-color: rgba(47, 128, 237, 0.15);
+    color: #2F80ED;
+    border: 1px solid rgba(47, 128, 237, 0.3);
+  }
+  
+  .patient-type-badge.outpatient {
+    background-color: rgba(86, 204, 242, 0.15);
+    color: #56CCF2;
+    border: 1px solid rgba(86, 204, 242, 0.3);
   }
   
   /* Completely revamped bed allocation section */
@@ -566,4 +661,213 @@
   .available-beds-count.none {
     background-color: #fed7d7;
     color: #822727;
+  }
+  
+  /* Enhanced Ward and Bed Display in Patient Table */
+  .ward-bed-display {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+    font-size: 0.9rem;
+    padding: 5px;
+    background-color: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .ward-display, .bed-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 0;
+  }
+  
+  .info-label {
+    font-weight: 600;
+    color: #4a5568;
+    min-width: 45px;
+  }
+  
+  .info-value {
+    background-color: #edf2f7;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: #2d3748;
+    display: inline-block;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    min-width: 60px;
+    text-align: center;
+  }
+  
+  .not-assigned {
+    color: #a0aec0;
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 5px;
+    background-color: #f7fafc;
+    border-radius: 4px;
+    border: 1px dashed #e2e8f0;
+    text-align: center;
+    display: block;
+  }
+  
+  .not-applicable {
+    color: #cbd5e0;
+    font-size: 0.85rem;
+    font-style: italic;
+    display: block;
+    text-align: center;
+  }
+  
+  .debug-info {
+    margin-top: 4px;
+    padding: 3px 6px;
+    background-color: #fff5f5;
+    border: 1px dashed #fc8181;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #e53e3e;
+    font-family: monospace;
+  }
+  
+  /* Add these styles for the bed assignment functionality */
+  
+  .assign-bed-btn {
+    background-color: #4834d4;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 0 5px;
+  }
+  
+  .assign-bed-btn:hover {
+    background-color: #3c2db0;
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .bed-assignment-modal {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .bed-assignment-modal h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .modal-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .modal-form label {
+    font-weight: 500;
+    color: #495057;
+  }
+  
+  .modal-form select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+  }
+  
+  .modal-form select:focus {
+    outline: none;
+    border-color: #4834d4;
+    box-shadow: 0 0 0 2px rgba(72, 52, 212, 0.1);
+  }
+  
+  .modal-form option:disabled {
+    color: #adb5bd;
+    background-color: #f1f3f5;
+  }
+  
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .save-btn {
+    background: #4834d4;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .save-btn:disabled {
+    background: #a8a8a8;
+    cursor: not-allowed;
+  }
+  
+  .save-btn:hover:not(:disabled) {
+    background: #3c2db0;
+  }
+  
+  .cancel-btn {
+    background: #e9ecef;
+    color: #495057;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .cancel-btn:hover {
+    background: #dee2e6;
+  }
+  
+  @media (max-width: 768px) {
+    .bed-assignment-modal {
+      width: 95%;
+      padding: 16px;
+    }
+    
+    .modal-actions {
+      flex-direction: column;
+    }
+    
+    .save-btn, .cancel-btn {
+      width: 100%;
+    }
   }
