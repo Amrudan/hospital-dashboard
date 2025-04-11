@@ -1,26 +1,82 @@
 const express = require('express');
 const router = express.Router();
-const labController = require('../controllers/labController');
+const Lab = require('../models/Lab');
 
-// GET all lab tests
-router.get('/', labController.getAllLabTests);
+// GET all labs
+router.get('/', async (req, res) => {
+  try {
+    const labs = await Lab.find({});
+    res.json(labs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-// GET lab tests by patient
-router.get('/patient/:patientId', labController.getLabTestsByPatient);
+// GET single lab
+router.get('/:id', async (req, res) => {
+  try {
+    const lab = await Lab.findById(req.params.id);
+    if (!lab) {
+      return res.status(404).json({ message: 'Lab not found' });
+    }
+    res.json(lab);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-// GET lab test by ID
-router.get('/:id', labController.getLabTestById);
+// POST new lab
+router.post('/', async (req, res) => {
+  const lab = new Lab({
+    labNumber: req.body.labNumber,
+    labType: req.body.labType,
+    status: req.body.status,
+    equipment: req.body.equipment,
+    technicianInCharge: req.body.technicianInCharge,
+    operatingHours: req.body.operatingHours,
+    tests: req.body.tests,
+    description: req.body.description,
+    lastMaintenance: req.body.lastMaintenance,
+    nextMaintenance: req.body.nextMaintenance,
+    specialNotes: req.body.specialNotes
+  });
 
-// POST create new lab test
-router.post('/', labController.createLabTest);
+  try {
+    const newLab = await lab.save();
+    res.status(201).json(newLab);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 
-// PUT update lab test
-router.put('/:id', labController.updateLabTest);
+// PUT update lab
+router.put('/:id', async (req, res) => {
+  try {
+    const lab = await Lab.findById(req.params.id);
+    if (!lab) {
+      return res.status(404).json({ message: 'Lab not found' });
+    }
 
-// DELETE lab test
-router.delete('/:id', labController.deleteLabTest);
+    Object.assign(lab, req.body);
+    const updatedLab = await lab.save();
+    res.json(updatedLab);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 
-// POST add test results
-router.post('/:id/add-results', labController.addTestResults);
+// DELETE lab
+router.delete('/:id', async (req, res) => {
+  try {
+    const lab = await Lab.findById(req.params.id);
+    if (!lab) {
+      return res.status(404).json({ message: 'Lab not found' });
+    }
+    await lab.remove();
+    res.json({ message: 'Lab deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 module.exports = router; 

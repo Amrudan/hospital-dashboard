@@ -1,47 +1,44 @@
 const mongoose = require('mongoose');
 
 const labSchema = new mongoose.Schema({
-  testName: {
+  labNumber: {
     type: String,
     required: true,
-    trim: true
+    unique: true
   },
-  patient: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Patient',
+  labType: {
+    type: String,
     required: true
-  },
-  requestedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Staff',
-    required: true
-  },
-  conductedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Staff'
-  },
-  requestDate: {
-    type: Date,
-    default: Date.now
-  },
-  completionDate: {
-    type: Date
-  },
-  results: {
-    type: String
-  },
-  notes: {
-    type: String
   },
   status: {
     type: String,
-    enum: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
-    default: 'Pending'
+    enum: ['Available', 'In Use', 'Maintenance'],
+    default: 'Available'
   },
-  cost: {
-    type: Number,
+  equipment: [{
+    name: String,
+    status: String,
+    lastMaintenance: Date,
+    nextMaintenance: Date
+  }],
+  technicianInCharge: {
+    type: String,
     required: true
-  }
+  },
+  operatingHours: {
+    start: String,
+    end: String
+  },
+  tests: [{
+    testName: String,
+    testType: String,
+    price: Number,
+    duration: String
+  }],
+  description: String,
+  lastMaintenance: Date,
+  nextMaintenance: Date,
+  specialNotes: String
 }, { timestamps: true });
 
 module.exports = mongoose.model('Lab', labSchema); 
