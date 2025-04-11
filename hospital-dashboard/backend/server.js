@@ -24,7 +24,7 @@ const invoiceRoutes = require('./routes/invoices');
 app.use('/api/patients', patientRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/wards', wardRoutes);
-app.use('/api/lab', labRoutes);
+app.use('/api/labs', labRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/invoices', invoiceRoutes);
 
