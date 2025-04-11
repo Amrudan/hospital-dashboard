@@ -24,49 +24,37 @@ ChartJS.register(
 );
 
 const Pharmacy = () => {
-  const [medicines, setMedicines] = useState([]);
-  const [equipment, setEquipment] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [experiencedMedicines, setExperiencedMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddMedicine, setShowAddMedicine] = useState(false);
-  const [showAddEquipment, setShowAddEquipment] = useState(false);
-  const [showEditMedicine, setShowEditMedicine] = useState(false);
-  const [showEditEquipment, setShowEditEquipment] = useState(false);
-  const [selectedMedicine, setSelectedMedicine] = useState(null);
-  const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [showAddPrescription, setShowAddPrescription] = useState(false);
+  const [selectedPrescription, setSelectedPrescription] = useState(null);
+  const [showEditPrescription, setShowEditPrescription] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMedicines, setFilteredMedicines] = useState([]);
+  const [filteredPrescriptions, setFilteredPrescriptions] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [staff, setStaff] = useState([]);
 
-  const [medicineForm, setMedicineForm] = useState({
-    name: '',
-    genericName: '',
-    category: '',
-    manufacturer: '',
-    price: '',
-    quantity: '',
-    expiryDate: '',
-    batchNumber: '',
-    description: '',
-    dosage: '',
-    sideEffects: '',
-    storageConditions: ''
-  });
-
-  const [equipmentForm, setEquipmentForm] = useState({
-    name: '',
-    category: '',
-    manufacturer: '',
-    purchaseDate: '',
-    lastMaintenance: '',
-    nextMaintenance: '',
-    status: '',
-    location: '',
-    notes: ''
+  const [prescriptionForm, setPrescriptionForm] = useState({
+    patient: '',
+    prescribedBy: '',
+    medications: [
+      {
+        name: '',
+        dosage: '',
+        quantity: '',
+        frequency: '',
+        duration: ''
+      }
+    ],
+    notes: '',
+    totalCost: 0
   });
 
   const [stockData, setStockData] = useState({
     labels: [],
     datasets: [{
-      label: 'Stock Level',
+      label: 'Prescription Count',
       data: [],
       backgroundColor: 'rgba(54, 162, 235, 0.5)'
     }]
@@ -90,40 +78,84 @@ const Pharmacy = () => {
 
   const fetchData = async () => {
     try {
-      const [medicinesRes, equipmentRes] = await Promise.all([
-        // axios.get('http://localhost:5000/api/pharmacy/medicines'),
-        // axios.get('http://localhost:5000/api/pharmacy/equipment')
+      setLoading(true);
+      
+      // Get prescriptions, patients, and staff data
+      const [prescriptionsRes, patientsRes, staffRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/pharmacy'),
+        axios.get('http://localhost:5000/api/patients'),
+        axios.get('http://localhost:5000/api/staff')
       ]);
-      setMedicines(medicinesRes.data);
-      setEquipment(equipmentRes.data);
+      
+      setPrescriptions(prescriptionsRes.data);
+      setFilteredPrescriptions(prescriptionsRes.data);
+      setPatients(patientsRes.data);
+      setStaff(staffRes.data);
+
+      // Generate experienced medicines (most frequently prescribed)
+      const medicationCounts = {};
+      prescriptionsRes.data.forEach(prescription => {
+        prescription.medications.forEach(med => {
+          if (medicationCounts[med.name]) {
+            medicationCounts[med.name].count += 1;
+            medicationCounts[med.name].dosages.add(med.dosage);
+          } else {
+            medicationCounts[med.name] = { 
+              count: 1, 
+              dosages: new Set([med.dosage]),
+              name: med.name
+            };
+          }
+        });
+      });
+
+      // Convert to array and sort by count (descending)
+      const experiencedMeds = Object.values(medicationCounts)
+        .map(med => ({
+          name: med.name,
+          count: med.count,
+          dosages: Array.from(med.dosages)
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10); // Top 10 medicines
+      
+      setExperiencedMedicines(experiencedMeds);
 
       // Process data for charts
-      const medicineNames = medicinesRes.data.map(m => m.name);
-      const stockLevels = medicinesRes.data.map(m => m.quantity);
+      const statuses = prescriptionsRes.data.map(p => p.status);
+      const uniqueStatuses = [...new Set(statuses)];
+      const statusCounts = uniqueStatuses.map(status => 
+        statuses.filter(s => s === status).length
+      );
 
-      const categories = medicinesRes.data.map(m => m.category);
-      const uniqueCategories = [...new Set(categories)];
-      const categoryCounts = uniqueCategories.map(category => 
-        categories.filter(c => c === category).length
+      // Get patients with prescriptions 
+      const patientsWithRx = prescriptionsRes.data.map(p => {
+        const patient = patientsRes.data.find(pat => pat._id === p.patient);
+        return patient ? patient.name : 'Unknown';
+      });
+      
+      const topPatients = [...new Set(patientsWithRx)].slice(0, 8);
+      const patientCounts = topPatients.map(patient => 
+        patientsWithRx.filter(p => p === patient).length
       );
 
       setStockData({
-        labels: medicineNames,
+        labels: topPatients,
         datasets: [{
-          label: 'Stock Level',
-          data: stockLevels,
+          label: 'Prescription Count',
+          data: patientCounts,
           backgroundColor: 'rgba(54, 162, 235, 0.5)'
         }]
       });
 
       setCategoryData({
-        labels: uniqueCategories,
+        labels: uniqueStatuses,
         datasets: [{
-          data: categoryCounts,
+          data: statusCounts,
           backgroundColor: [
-            'rgba(255, 99, 132, 0.5)',
-            'rgba(54, 162, 235, 0.5)',
-            'rgba(255, 206, 86, 0.5)'
+            'rgba(255, 206, 86, 0.5)', // Pending
+            'rgba(75, 192, 192, 0.5)', // Dispensed
+            'rgba(255, 99, 132, 0.5)'  // Cancelled
           ]
         }]
       });
@@ -138,147 +170,162 @@ const Pharmacy = () => {
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-    const filtered = medicines.filter(medicine => 
-      medicine.name.toLowerCase().includes(query) ||
-      medicine.category.toLowerCase().includes(query)
-    );
-    setFilteredMedicines(filtered);
+    
+    if (!query) {
+      setFilteredPrescriptions(prescriptions);
+      return;
+    }
+    
+    const filtered = prescriptions.filter(prescription => {
+      const patient = patients.find(p => p._id === prescription.patient);
+      const patientName = patient ? patient.name.toLowerCase() : '';
+      
+      const medicineMatch = prescription.medications.some(med => 
+        med.name.toLowerCase().includes(query)
+      );
+      
+      return patientName.includes(query) || medicineMatch;
+    });
+    
+    setFilteredPrescriptions(filtered);
   };
 
-  const handleAddMedicine = async (e) => {
+  const handleAddMedication = () => {
+    setPrescriptionForm({
+      ...prescriptionForm,
+      medications: [
+        ...prescriptionForm.medications,
+        { name: '', dosage: '', quantity: '', frequency: '', duration: '' }
+      ]
+    });
+  };
+
+  const handleRemoveMedication = (index) => {
+    const updatedMedications = [...prescriptionForm.medications];
+    updatedMedications.splice(index, 1);
+    setPrescriptionForm({
+      ...prescriptionForm,
+      medications: updatedMedications
+    });
+  };
+
+  const handleMedicationChange = (index, field, value) => {
+    const updatedMedications = [...prescriptionForm.medications];
+    updatedMedications[index][field] = value;
+    setPrescriptionForm({
+      ...prescriptionForm,
+      medications: updatedMedications
+    });
+  };
+
+  const calculateTotalCost = () => {
+    // Simple cost calculation based on quantity
+    const totalCost = prescriptionForm.medications.reduce((sum, med) => {
+      const quantity = parseInt(med.quantity) || 0;
+      // Assume a base price of $10 per unit
+      return sum + (quantity * 10);
+    }, 0);
+    
+    setPrescriptionForm({
+      ...prescriptionForm,
+      totalCost
+    });
+  };
+
+  const handleAddPrescription = async (e) => {
     e.preventDefault();
     try {
-      // Log the data being sent
-      console.log('Attempting to add medicine with data:', medicineForm);
-
       // Validate required fields
-      if (!medicineForm.name || !medicineForm.category || !medicineForm.manufacturer || 
-          !medicineForm.price || !medicineForm.quantity || !medicineForm.expiryDate) {
+      if (!prescriptionForm.patient || !prescriptionForm.prescribedBy || 
+          prescriptionForm.medications.length === 0) {
         alert('Please fill in all required fields');
         return;
       }
-
-      const response = await axios.post('http://localhost:5000/api/pharmacy/medicines', medicineForm);
+      
+      // Calculate total cost before submission
+      calculateTotalCost();
+      
+      const response = await axios.post('http://localhost:5000/api/pharmacy', prescriptionForm);
       
       if (response.data) {
-        console.log('Successfully added medicine:', response.data);
-        setShowAddMedicine(false);
+        console.log('Successfully added prescription:', response.data);
+        setShowAddPrescription(false);
         // Reset form
-        setMedicineForm({
-          name: '',
-          genericName: '',
-          category: '',
-          manufacturer: '',
-          price: '',
-          quantity: '',
-          expiryDate: '',
-          batchNumber: '',
-          description: '',
-          dosage: '',
-          sideEffects: '',
-          storageConditions: ''
+        setPrescriptionForm({
+          patient: '',
+          prescribedBy: '',
+          medications: [
+            {
+              name: '',
+              dosage: '',
+              quantity: '',
+              frequency: '',
+              duration: ''
+            }
+          ],
+          notes: '',
+          totalCost: 0
         });
         fetchData(); // Refresh the data
       }
     } catch (err) {
-      console.error('Error adding medicine:', err.response?.data || err.message);
-      alert(`Failed to add medicine: ${err.response?.data?.error || err.message}`);
+      console.error('Error adding prescription:', err.response?.data || err.message);
+      alert(`Failed to add prescription: ${err.response?.data?.error || err.message}`);
     }
   };
 
-  const handleAddEquipment = async (e) => {
+  const handleEditPrescription = (prescription) => {
+    setSelectedPrescription(prescription);
+    setPrescriptionForm(prescription);
+    setShowEditPrescription(true);
+  };
+
+  const handleUpdatePrescription = async (e) => {
     e.preventDefault();
     try {
-      // Log the data being sent
-      console.log('Attempting to add equipment with data:', equipmentForm);
+      calculateTotalCost();
+      await axios.put(`http://localhost:5000/api/pharmacy/${selectedPrescription._id}`, prescriptionForm);
+      setShowEditPrescription(false);
+      fetchData();
+    } catch (err) {
+      console.error('Error updating prescription:', err);
+    }
+  };
 
-      // Validate required fields
-      if (!equipmentForm.name || !equipmentForm.category || !equipmentForm.manufacturer || 
-          !equipmentForm.purchaseDate || !equipmentForm.status || !equipmentForm.location) {
-        alert('Please fill in all required fields');
+  const handleDeletePrescription = async (id) => {
+    if (window.confirm('Are you sure you want to delete this prescription?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/pharmacy/${id}`);
+        fetchData();
+      } catch (err) {
+        console.error('Error deleting prescription:', err);
+      }
+    }
+  };
+
+  const handleDispenseMedication = async (id) => {
+    try {
+      // Find a pharmacist from staff list
+      const pharmacist = staff.find(s => s.role === 'Pharmacist');
+      
+      if (!pharmacist) {
+        alert('No pharmacist found in staff list');
         return;
       }
-
-      const response = await axios.post('http://localhost:5000/api/pharmacy/equipment', equipmentForm);
       
-      if (response.data) {
-        console.log('Successfully added equipment:', response.data);
-        setShowAddEquipment(false);
-        // Reset form
-        setEquipmentForm({
-          name: '',
-          category: '',
-          manufacturer: '',
-          purchaseDate: '',
-          lastMaintenance: '',
-          nextMaintenance: '',
-          status: '',
-          location: '',
-          notes: ''
-        });
-        fetchData(); // Refresh the data
-      }
-    } catch (err) {
-      console.error('Error adding equipment:', err.response?.data || err.message);
-      alert(`Failed to add equipment: ${err.response?.data?.error || err.message}`);
-    }
-  };
-
-  const handleEditMedicine = (medicine) => {
-    setSelectedMedicine(medicine);
-    setMedicineForm(medicine);
-    setShowEditMedicine(true);
-  };
-
-  const handleEditEquipment = (equipment) => {
-    setSelectedEquipment(equipment);
-    setEquipmentForm(equipment);
-    setShowEditEquipment(true);
-  };
-
-  const handleUpdateMedicine = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`http://localhost:5000/api/pharmacy/medicines/${selectedMedicine._id}`, medicineForm);
-      setShowEditMedicine(false);
+      await axios.post(`http://localhost:5000/api/pharmacy/${id}/dispense`, {
+        dispensedBy: pharmacist._id
+      });
+      
       fetchData();
     } catch (err) {
-      console.error('Error updating medicine:', err);
+      console.error('Error dispensing medication:', err);
     }
   };
 
-  const handleUpdateEquipment = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`http://localhost:5000/api/pharmacy/equipment/${selectedEquipment._id}`, equipmentForm);
-      setShowEditEquipment(false);
-      fetchData();
-    } catch (err) {
-      console.error('Error updating equipment:', err);
-    }
-  };
-
-  const handleDeleteMedicine = async (id) => {
-    if (window.confirm('Are you sure you want to delete this medicine?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/pharmacy/medicines/${id}`);
-        fetchData();
-      } catch (err) {
-        console.error('Error deleting medicine:', err);
-      }
-    }
-  };
-
-  const handleDeleteEquipment = async (id) => {
-    if (window.confirm('Are you sure you want to delete this equipment?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/pharmacy/equipment/${id}`);
-        fetchData();
-      } catch (err) {
-        console.error('Error deleting equipment:', err);
-      }
-    }
-  };
+  if (loading) {
+    return <div className="loading">Loading pharmacy data...</div>;
+  }
 
   return (
     <div className="pharmacy-container">
@@ -287,7 +334,7 @@ const Pharmacy = () => {
         <div className="search-box">
           <input
             type="text"
-            placeholder="Search medicines..."
+            placeholder="Search prescriptions..."
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -295,15 +342,9 @@ const Pharmacy = () => {
         <div className="action-buttons">
           <button 
             className="add-button"
-            onClick={() => setShowAddMedicine(true)}
+            onClick={() => setShowAddPrescription(true)}
           >
-            Add Medicine
-          </button>
-          <button 
-            className="add-button"
-            onClick={() => setShowAddEquipment(true)}
-          >
-            Add Equipment
+            Add Prescription
           </button>
         </div>
       </div>
@@ -311,7 +352,7 @@ const Pharmacy = () => {
       {/* Charts Section */}
       <div className="charts-section">
         <div className="chart-card">
-          <h3>Medicine Stock Levels</h3>
+          <h3>Patient Prescription Count</h3>
           <Bar 
             data={stockData}
             options={{
@@ -330,7 +371,7 @@ const Pharmacy = () => {
           />
         </div>
         <div className="chart-card">
-          <h3>Medicine Categories</h3>
+          <h3>Prescription Status</h3>
           <Pie 
             data={categoryData}
             options={{
@@ -345,290 +386,218 @@ const Pharmacy = () => {
         </div>
       </div>
 
-      {/* Medicines Table */}
-      <div className="table-section">
-        <h3>Medicines List</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Quantity</th>
-              <th>Price</th>
-              <th>Expiry Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredMedicines.map(medicine => (
-              <tr key={medicine._id}>
-                <td>{medicine.name}</td>
-                <td>{medicine.category}</td>
-                <td>{medicine.quantity}</td>
-                <td>${medicine.price}</td>
-                <td>{new Date(medicine.expiryDate).toLocaleDateString()}</td>
-                <td>
-                  <button onClick={() => handleEditMedicine(medicine)}>Edit</button>
-                  <button onClick={() => handleDeleteMedicine(medicine._id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Equipment Table */}
-      <div className="table-section">
-        <h3>Equipment List</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Last Maintenance</th>
-              <th>Next Maintenance</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {equipment.map(item => (
-              <tr key={item._id}>
-                <td>{item.name}</td>
-                <td>{item.category}</td>
-                <td>{item.status}</td>
-                <td>{new Date(item.lastMaintenance).toLocaleDateString()}</td>
-                <td>{new Date(item.nextMaintenance).toLocaleDateString()}</td>
-                <td>
-                  <button onClick={() => handleEditEquipment(item)}>Edit</button>
-                  <button onClick={() => handleDeleteEquipment(item._id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Add Medicine Modal */}
-      {showAddMedicine && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-content">
-              <h3>Add New Medicine</h3>
-              <form onSubmit={handleAddMedicine}>
-                <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    value={medicineForm.name}
-                    onChange={(e) => setMedicineForm({...medicineForm, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Generic Name</label>
-                  <input
-                    type="text"
-                    value={medicineForm.genericName}
-                    onChange={(e) => setMedicineForm({...medicineForm, genericName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Category</label>
-                  <input
-                    type="text"
-                    value={medicineForm.category}
-                    onChange={(e) => setMedicineForm({...medicineForm, category: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Manufacturer</label>
-                  <input
-                    type="text"
-                    value={medicineForm.manufacturer}
-                    onChange={(e) => setMedicineForm({...medicineForm, manufacturer: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Price</label>
-                  <input
-                    type="number"
-                    value={medicineForm.price}
-                    onChange={(e) => setMedicineForm({...medicineForm, price: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Quantity</label>
-                  <input
-                    type="number"
-                    value={medicineForm.quantity}
-                    onChange={(e) => setMedicineForm({...medicineForm, quantity: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Expiry Date</label>
-                  <input
-                    type="date"
-                    value={medicineForm.expiryDate}
-                    onChange={(e) => setMedicineForm({...medicineForm, expiryDate: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Batch Number</label>
-                  <input
-                    type="text"
-                    value={medicineForm.batchNumber}
-                    onChange={(e) => setMedicineForm({...medicineForm, batchNumber: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={medicineForm.description}
-                    onChange={(e) => setMedicineForm({...medicineForm, description: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Dosage</label>
-                  <input
-                    type="text"
-                    value={medicineForm.dosage}
-                    onChange={(e) => setMedicineForm({...medicineForm, dosage: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Side Effects</label>
-                  <textarea
-                    value={medicineForm.sideEffects}
-                    onChange={(e) => setMedicineForm({...medicineForm, sideEffects: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Storage Conditions</label>
-                  <textarea
-                    value={medicineForm.storageConditions}
-                    onChange={(e) => setMedicineForm({...medicineForm, storageConditions: e.target.value})}
-                  />
-                </div>
-                <div className="modal-buttons">
-                  <button type="submit" className="submit-button">Add Medicine</button>
-                  <button 
-                    type="button" 
-                    className="cancel-button"
-                    onClick={() => setShowAddMedicine(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+      {/* Experienced Medicines Section */}
+      <div className="experienced-medicines-section">
+        <h3>Frequently Prescribed Medicines</h3>
+        <div className="medicine-cards">
+          {experiencedMedicines.map((medicine, index) => (
+            <div className="medicine-card" key={index}>
+              <h4>{medicine.name}</h4>
+              <p>Prescribed {medicine.count} times</p>
+              <p>Common dosages:</p>
+              <ul>
+                {medicine.dosages.map((dosage, i) => (
+                  <li key={i}>{dosage}</li>
+                ))}
+              </ul>
             </div>
-          </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Add Equipment Modal */}
-      {showAddEquipment && (
+      {/* Prescriptions Table */}
+      <div className="table-section">
+        <h3>Prescriptions List</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Date</th>
+              <th>Medications</th>
+              <th>Status</th>
+              <th>Total Cost</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPrescriptions.map(prescription => {
+              const patient = patients.find(p => p._id === prescription.patient);
+              const patientName = patient ? patient.name : 'Unknown';
+              
+              return (
+                <tr key={prescription._id}>
+                  <td>{patientName}</td>
+                  <td>{new Date(prescription.prescriptionDate).toLocaleDateString()}</td>
+                  <td>
+                    <ul className="medication-list">
+                      {prescription.medications.map((med, index) => (
+                        <li key={index}>{med.name} ({med.dosage})</li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td>{prescription.status}</td>
+                  <td>${prescription.totalCost}</td>
+                  <td>
+                    <div className="action-buttons-cell">
+                      {prescription.status === 'Pending' && (
+                        <button onClick={() => handleDispenseMedication(prescription._id)}>Dispense</button>
+                      )}
+                      <button onClick={() => handleEditPrescription(prescription)}>Edit</button>
+                      <button onClick={() => handleDeletePrescription(prescription._id)}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add Prescription Modal */}
+      {showAddPrescription && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-content">
-              <h3>Add New Equipment</h3>
-              <form onSubmit={handleAddEquipment}>
+              <h3>Add New Prescription</h3>
+              <form onSubmit={handleAddPrescription}>
                 <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    value={equipmentForm.name}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Category</label>
-                  <input
-                    type="text"
-                    value={equipmentForm.category}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, category: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Manufacturer</label>
-                  <input
-                    type="text"
-                    value={equipmentForm.manufacturer}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, manufacturer: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Purchase Date</label>
-                  <input
-                    type="date"
-                    value={equipmentForm.purchaseDate}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, purchaseDate: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Last Maintenance</label>
-                  <input
-                    type="date"
-                    value={equipmentForm.lastMaintenance}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, lastMaintenance: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Next Maintenance</label>
-                  <input
-                    type="date"
-                    value={equipmentForm.nextMaintenance}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, nextMaintenance: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Status</label>
+                  <label>Patient</label>
                   <select
-                    value={equipmentForm.status}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, status: e.target.value})}
+                    value={prescriptionForm.patient}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, patient: e.target.value})}
                     required
+                    className="select-dropdown"
                   >
-                    <option value="">Select Status</option>
-                    <option value="Operational">Operational</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Out of Service">Out of Service</option>
+                    <option value="">Select Patient</option>
+                    {patients.length > 0 ? (
+                      patients.map(patient => (
+                        <option key={patient._id} value={patient._id}>
+                          {patient.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No patients available</option>
+                    )}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Location</label>
-                  <input
-                    type="text"
-                    value={equipmentForm.location}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, location: e.target.value})}
+                  <label>Prescribed By</label>
+                  <select
+                    value={prescriptionForm.prescribedBy}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, prescribedBy: e.target.value})}
                     required
-                  />
+                    className="select-dropdown"
+                  >
+                    <option value="">Select Doctor</option>
+                    {staff.length > 0 ? (
+                      staff.filter(s => s.role === 'Doctor').map(doctor => (
+                        <option key={doctor._id} value={doctor._id}>
+                          {doctor.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No doctors available</option>
+                    )}
+                  </select>
                 </div>
+                
+                <h4>Medications</h4>
+                {prescriptionForm.medications.map((med, index) => (
+                  <div key={index} className="medication-form">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Name</label>
+                        <input
+                          type="text"
+                          value={med.name}
+                          onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Dosage</label>
+                        <input
+                          type="text"
+                          value={med.dosage}
+                          onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
+                          required
+                          placeholder="e.g., 500mg"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Quantity</label>
+                        <input
+                          type="number"
+                          value={med.quantity}
+                          onChange={(e) => handleMedicationChange(index, 'quantity', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Frequency</label>
+                        <input
+                          type="text"
+                          value={med.frequency}
+                          onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
+                          required
+                          placeholder="e.g., 3 times daily"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Duration</label>
+                        <input
+                          type="text"
+                          value={med.duration}
+                          onChange={(e) => handleMedicationChange(index, 'duration', e.target.value)}
+                          required
+                          placeholder="e.g., 7 days"
+                        />
+                      </div>
+                    </div>
+                    {prescriptionForm.medications.length > 1 && (
+                      <button 
+                        type="button" 
+                        className="remove-med-button"
+                        onClick={() => handleRemoveMedication(index)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                
+                <button 
+                  type="button" 
+                  className="add-med-button"
+                  onClick={handleAddMedication}
+                >
+                  + Add Another Medication
+                </button>
+                
                 <div className="form-group">
                   <label>Notes</label>
                   <textarea
-                    value={equipmentForm.notes}
-                    onChange={(e) => setEquipmentForm({...equipmentForm, notes: e.target.value})}
+                    value={prescriptionForm.notes}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, notes: e.target.value})}
                   />
                 </div>
+                
                 <div className="modal-buttons">
-                  <button type="submit" className="submit-button">Add Equipment</button>
+                  <button 
+                    type="button" 
+                    className="calculate-button"
+                    onClick={calculateTotalCost}
+                  >
+                    Calculate Cost
+                  </button>
+                  <p className="total-cost">Total Cost: ${prescriptionForm.totalCost}</p>
+                  <button type="submit" className="submit-button">Create Prescription</button>
                   <button 
                     type="button" 
                     className="cancel-button"
-                    onClick={() => setShowAddEquipment(false)}
+                    onClick={() => setShowAddPrescription(false)}
                   >
                     Cancel
                   </button>
@@ -639,216 +608,167 @@ const Pharmacy = () => {
         </div>
       )}
 
-      {/* Edit Medicine Modal */}
-      {showEditMedicine && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Edit Medicine</h3>
-            <form onSubmit={handleUpdateMedicine}>
-              <div className="form-group">
-                <label>Name</label>
-                <input
-                  type="text"
-                  value={medicineForm.name}
-                  onChange={(e) => setMedicineForm({...medicineForm, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Generic Name</label>
-                <input
-                  type="text"
-                  value={medicineForm.genericName}
-                  onChange={(e) => setMedicineForm({...medicineForm, genericName: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Category</label>
-                <input
-                  type="text"
-                  value={medicineForm.category}
-                  onChange={(e) => setMedicineForm({...medicineForm, category: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Manufacturer</label>
-                <input
-                  type="text"
-                  value={medicineForm.manufacturer}
-                  onChange={(e) => setMedicineForm({...medicineForm, manufacturer: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Price</label>
-                <input
-                  type="number"
-                  value={medicineForm.price}
-                  onChange={(e) => setMedicineForm({...medicineForm, price: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Quantity</label>
-                <input
-                  type="number"
-                  value={medicineForm.quantity}
-                  onChange={(e) => setMedicineForm({...medicineForm, quantity: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Expiry Date</label>
-                <input
-                  type="date"
-                  value={medicineForm.expiryDate}
-                  onChange={(e) => setMedicineForm({...medicineForm, expiryDate: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Batch Number</label>
-                <input
-                  type="text"
-                  value={medicineForm.batchNumber}
-                  onChange={(e) => setMedicineForm({...medicineForm, batchNumber: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  value={medicineForm.description}
-                  onChange={(e) => setMedicineForm({...medicineForm, description: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Dosage</label>
-                <input
-                  type="text"
-                  value={medicineForm.dosage}
-                  onChange={(e) => setMedicineForm({...medicineForm, dosage: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Side Effects</label>
-                <textarea
-                  value={medicineForm.sideEffects}
-                  onChange={(e) => setMedicineForm({...medicineForm, sideEffects: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Storage Conditions</label>
-                <textarea
-                  value={medicineForm.storageConditions}
-                  onChange={(e) => setMedicineForm({...medicineForm, storageConditions: e.target.value})}
-                />
-              </div>
-              <div className="modal-buttons">
-                <button type="submit">Update Medicine</button>
-                <button type="button" onClick={() => setShowEditMedicine(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Equipment Modal */}
-      {showEditEquipment && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Edit Equipment</h3>
-            <form onSubmit={handleUpdateEquipment}>
-              <div className="form-group">
-                <label>Name</label>
-                <input
-                  type="text"
-                  value={equipmentForm.name}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Category</label>
-                <input
-                  type="text"
-                  value={equipmentForm.category}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, category: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Manufacturer</label>
-                <input
-                  type="text"
-                  value={equipmentForm.manufacturer}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, manufacturer: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Purchase Date</label>
-                <input
-                  type="date"
-                  value={equipmentForm.purchaseDate}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, purchaseDate: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Last Maintenance</label>
-                <input
-                  type="date"
-                  value={equipmentForm.lastMaintenance}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, lastMaintenance: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Next Maintenance</label>
-                <input
-                  type="date"
-                  value={equipmentForm.nextMaintenance}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, nextMaintenance: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Status</label>
-                <select
-                  value={equipmentForm.status}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, status: e.target.value})}
-                  required
+      {/* Edit Prescription Modal */}
+      {showEditPrescription && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-content">
+              <h3>Edit Prescription</h3>
+              <form onSubmit={handleUpdatePrescription}>
+                <div className="form-group">
+                  <label>Patient</label>
+                  <select
+                    value={prescriptionForm.patient}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, patient: e.target.value})}
+                    required
+                    className="select-dropdown"
+                  >
+                    <option value="">Select Patient</option>
+                    {patients.length > 0 ? (
+                      patients.map(patient => (
+                        <option key={patient._id} value={patient._id}>
+                          {patient.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No patients available</option>
+                    )}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Prescribed By</label>
+                  <select
+                    value={prescriptionForm.prescribedBy}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, prescribedBy: e.target.value})}
+                    required
+                    className="select-dropdown"
+                  >
+                    <option value="">Select Doctor</option>
+                    {staff.length > 0 ? (
+                      staff.filter(s => s.role === 'Doctor').map(doctor => (
+                        <option key={doctor._id} value={doctor._id}>
+                          {doctor.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No doctors available</option>
+                    )}
+                  </select>
+                </div>
+                
+                <h4>Medications</h4>
+                {prescriptionForm.medications.map((med, index) => (
+                  <div key={index} className="medication-form">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Name</label>
+                        <input
+                          type="text"
+                          value={med.name}
+                          onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Dosage</label>
+                        <input
+                          type="text"
+                          value={med.dosage}
+                          onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Quantity</label>
+                        <input
+                          type="number"
+                          value={med.quantity}
+                          onChange={(e) => handleMedicationChange(index, 'quantity', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Frequency</label>
+                        <input
+                          type="text"
+                          value={med.frequency}
+                          onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Duration</label>
+                        <input
+                          type="text"
+                          value={med.duration}
+                          onChange={(e) => handleMedicationChange(index, 'duration', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    {prescriptionForm.medications.length > 1 && (
+                      <button 
+                        type="button" 
+                        className="remove-med-button"
+                        onClick={() => handleRemoveMedication(index)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                
+                <button 
+                  type="button" 
+                  className="add-med-button"
+                  onClick={handleAddMedication}
                 >
-                  <option value="">Select Status</option>
-                  <option value="Operational">Operational</option>
-                  <option value="Maintenance">Maintenance</option>
-                  <option value="Out of Service">Out of Service</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Location</label>
-                <input
-                  type="text"
-                  value={equipmentForm.location}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, location: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Notes</label>
-                <textarea
-                  value={equipmentForm.notes}
-                  onChange={(e) => setEquipmentForm({...equipmentForm, notes: e.target.value})}
-                />
-              </div>
-              <div className="modal-buttons">
-                <button type="submit">Update Equipment</button>
-                <button type="button" onClick={() => setShowEditEquipment(false)}>Cancel</button>
-              </div>
-            </form>
+                  + Add Another Medication
+                </button>
+                
+                <div className="form-group">
+                  <label>Notes</label>
+                  <textarea
+                    value={prescriptionForm.notes}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, notes: e.target.value})}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={prescriptionForm.status}
+                    onChange={(e) => setPrescriptionForm({...prescriptionForm, status: e.target.value})}
+                    required
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Dispensed">Dispensed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                
+                <div className="modal-buttons">
+                  <button 
+                    type="button" 
+                    className="calculate-button"
+                    onClick={calculateTotalCost}
+                  >
+                    Recalculate Cost
+                  </button>
+                  <p className="total-cost">Total Cost: ${prescriptionForm.totalCost}</p>
+                  <button type="submit" className="submit-button">Update Prescription</button>
+                  <button 
+                    type="button" 
+                    className="cancel-button"
+                    onClick={() => setShowEditPrescription(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

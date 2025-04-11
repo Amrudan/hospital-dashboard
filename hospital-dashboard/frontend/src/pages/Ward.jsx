@@ -36,6 +36,8 @@ const Ward = () => {
     specialNotes: ''
   });
 
+  const [selectedWardFromSearch, setSelectedWardFromSearch] = useState(null);
+
   // Fetch wards data
   useEffect(() => {
     fetchWards();
@@ -225,16 +227,32 @@ const Ward = () => {
       return;
     }
 
-    // Filter wards based on ward number
+    // Filter wards based on ward number or type
     const results = wards.filter(ward => 
-      ward.wardNumber.toString().toLowerCase().includes(searchQuery.toLowerCase())
+      ward.wardNumber.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ward.wardType.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     setFilteredWards(results);
+  };
 
-    if (results.length === 0) {
-      alert('No wards found with this number');
+  // Update search on each keypress
+  const handleSearchInputChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    if (!query) {
+      setFilteredWards([]);
+      return;
     }
+
+    // Filter wards based on ward number or type
+    const results = wards.filter(ward => 
+      ward.wardNumber.toString().toLowerCase().includes(query.toLowerCase()) ||
+      ward.wardType.toLowerCase().includes(query.toLowerCase())
+    );
+
+    setFilteredWards(results);
   };
 
   const fetchBedAllocationData = async (wardsData = null) => {
@@ -393,6 +411,26 @@ const Ward = () => {
     toast.success('Exported occupied beds data to CSV');
   };
 
+  const handleSearchResultClick = (ward) => {
+    handleEdit(ward);
+    setSelectedWardFromSearch(ward._id);
+    
+    // Scroll to the ward in the table
+    setTimeout(() => {
+      const wardElement = document.getElementById(`ward-row-${ward._id}`);
+      if (wardElement) {
+        wardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        wardElement.classList.add('highlight-row');
+        
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          wardElement.classList.remove('highlight-row');
+          setSelectedWardFromSearch(null);
+        }, 3000);
+      }
+    }, 100);
+  };
+
   return (
     <div className="ward-management-page">
       <h2>Ward Management</h2>
@@ -401,10 +439,8 @@ const Ward = () => {
         <div className="search-container">
           <input 
             type="text" 
-            placeholder="Search by Ward Number"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
+            onChange={handleSearchInputChange}
           />
           <button 
             className="search-btn"
@@ -412,6 +448,27 @@ const Ward = () => {
           >
             Search
           </button>
+          
+          {filteredWards.length > 0 && (
+            <div className="search-results">
+              <h4>Search Results ({filteredWards.length})</h4>
+              <div className="search-results-list">
+                {filteredWards.map(ward => (
+                  <div 
+                    key={ward._id} 
+                    className="search-result-item"
+                    onClick={() => handleSearchResultClick(ward)}
+                  >
+                    <div className="ward-number">Ward {ward.wardNumber}</div>
+                    <div className="ward-type">{ward.wardType}</div>
+                    <div className="ward-occupancy">
+                      {ward.currentOccupancy}/{ward.capacity} beds
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -632,9 +689,12 @@ const Ward = () => {
                 </tr>
               </thead>
               <tbody>
-                {(filteredWards.length > 0 ? filteredWards : wards).map(ward => (
+                {wards.map(ward => (
                   <React.Fragment key={ward._id}>
-                    <tr>
+                    <tr 
+                      id={`ward-row-${ward._id}`}
+                      className={selectedWardFromSearch === ward._id ? 'highlight-row' : ''}
+                    >
                       <td>{ward.wardNumber}</td>
                       <td>{ward.wardType}</td>
                       <td>{ward.capacity}</td>
@@ -729,116 +789,19 @@ const Ward = () => {
                                               </div>
                                             </div>
                                             <div className="allocated-bed-footer">
-                                              <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
-                                                View Details
-                                              </Link>
+                                              <Link to={`/patients/${bed.patient.id}`}>View Patient</Link>
                                             </div>
                                           </div>
                                         ))}
                                     </div>
                                   ) : (
-                                    <p className="no-allocated-beds">No beds currently allocated in this ward</p>
+                                    <p>No occupied beds</p>
                                   )
                                 ) : (
-                                  <div className="beds-loading">
-                                    <span className="loading-spinner"></span>
-                                    Loading allocated beds...
-                                  </div>
+                                  <p>Loading...</p>
                                 )}
                               </div>
                             </div>
-
-                            {/* Occupied beds table - only shown if there are occupied beds */}
-                            {wardBedAllocations[ward._id].beds.some(bed => bed.status === 'Occupied') && (
-                              <div className="occupied-beds-table-container">
-                                <div className="table-header-actions">
-                                  <h5>Allocated Patients</h5>
-                                  <button 
-                                    className="export-button" 
-                                    onClick={() => exportToCSV(ward._id)}
-                                    title="Export to CSV"
-                                  >
-                                    <FaFileExport /> Export
-                                  </button>
-                                </div>
-                                <table className="occupied-beds-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Bed #</th>
-                                      <th>Patient Name</th>
-                                      <th>Age/Gender</th>
-                                      <th>Admission Date</th>
-                                      <th>Status</th>
-                                      <th>Action</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {wardBedAllocations[ward._id].beds
-                                      .filter(bed => bed.status === 'Occupied' && bed.patient)
-                                      .sort((a, b) => a.bedNumber - b.bedNumber)
-                                      .map(bed => (
-                                        <tr key={`occupied-${bed.bedNumber}`}>
-                                          <td className="bed-number-cell">{bed.bedNumber}</td>
-                                          <td>{bed.patient.name}</td>
-                                          <td>{bed.patient.age} / {bed.patient.gender}</td>
-                                          <td>{new Date(bed.patient.admissionDate).toLocaleDateString()}</td>
-                                          <td>
-                                            <span className={`status-badge ${bed.patient.status.toLowerCase()}`}>
-                                              {bed.patient.status}
-                                            </span>
-                                          </td>
-                                          <td>
-                                            <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
-                                              View Details
-                                            </Link>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-
-                            <div className="bed-allocation-visual">
-                              <h5>Bed Map</h5>
-                              <div className="beds-grid">
-                                {wardBedAllocations[ward._id].beds
-                                  .sort((a, b) => a.bedNumber - b.bedNumber)
-                                  .map((bed, index) => (
-                                    <div 
-                                      key={bed.bedNumber} 
-                                      className={`bed-box ${bed.status.toLowerCase()}`}
-                                      style={{ '--index': index }}
-                                    >
-                                      <div className="bed-number">Bed #{bed.bedNumber}</div>
-                                      {bed.status === 'Occupied' && bed.patient ? (
-                                        <div className="patient-info">
-                                          <div className="patient-name">{bed.patient.name}</div>
-                                          <div className="patient-details">
-                                            <span>{bed.patient.age}y, {bed.patient.gender}</span>
-                                            <span className={`patient-status status-${bed.patient.status?.toLowerCase()}`}>
-                                              {bed.patient.status}
-                                            </span>
-                                          </div>
-                                          <div className="patient-type">
-                                            {bed.patient.type || 'Inpatient'}
-                                          </div>
-                                          <Link to={`/patients/view/${bed.patient.id}`} className="view-link">
-                                            View Details
-                                          </Link>
-                                        </div>
-                                      ) : (
-                                        <div className="bed-available">Available</div>
-                                      )}
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                            
-                            {(!wardPatients[ward._id] || wardPatients[ward._id].length === 0) && 
-                             (!wardBedAllocations[ward._id] || wardBedAllocations[ward._id].beds.every(bed => bed.status === 'Available')) && (
-                              <p className="no-patients">No patients currently assigned to this ward</p>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -854,4 +817,4 @@ const Ward = () => {
   );
 };
 
-export default Ward; 
+export default Ward;
