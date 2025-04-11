@@ -25,7 +25,8 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/wards', wardRoutes);
 app.use('/api/labs', labRoutes);
-app.use('/api/pharmacy', pharmacyRoutes);
+app.use('/api/lab', labRoutes);
+app.use('/api/pharmacies', pharmacyRoutes);
 app.use('/api/invoices', invoiceRoutes);
 
 // Root route for API check

@@ -170,6 +170,7 @@ button:hover {
   border-radius: 4px;
   background-color: white;
   width: 300px;
+  color: black;
   font-size: 0.875rem;
 }
 
