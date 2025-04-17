@@ -14,9 +14,26 @@ const staffSchema = new mongoose.Schema({
   specialization: {
     type: String
   },
+  nic: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return /^\d{9}[A-Za-z]$/.test(v);
+      },
+      message: props => `${props.value} is not a valid NIC number! Must be 9 numbers followed by 1 alphabet.`
+    }
+  },
   contact: {
     type: String,
-    required: true
+    required: true,
+    validate: {
+      validator: function(v) {
+        return /^[0-9]{10}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid phone number! Must be 10 digits.`
+    }
   },
   email: {
     type: String,
@@ -43,4 +60,4 @@ const staffSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Staff', staffSchema); 
+module.exports = mongoose.model('Staff', staffSchema);

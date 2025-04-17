@@ -592,7 +592,7 @@ const Pharmacy = () => {
                   >
                     Calculate Cost
                   </button>
-                  <p className="total-cost">Total Cost: ${prescriptionForm.totalCost}</p>
+                  <p className="total-cost">Total Cost: Rs.{prescriptionForm.totalCost}</p>
                   <button type="submit" className="submit-button">Create Prescription</button>
                   <button 
                     type="button" 
@@ -757,7 +757,7 @@ const Pharmacy = () => {
                   >
                     Recalculate Cost
                   </button>
-                  <p className="total-cost">Total Cost: ${prescriptionForm.totalCost}</p>
+                  <p className="total-cost">Total Cost: Rs.{prescriptionForm.totalCost}</p>
                   <button type="submit" className="submit-button">Update Prescription</button>
                   <button 
                     type="button" 

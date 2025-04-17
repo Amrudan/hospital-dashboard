@@ -9,6 +9,7 @@ const Staff = () => {
     name: '',
     role: 'Doctor',
     specialization: '',
+    nic: '',
     department: '',
     contact: '',
     email: '',
@@ -93,6 +94,7 @@ const Staff = () => {
         name: '',
         role: 'Doctor',
         specialization: '',
+        nic: '',
         department: '',
         contact: '',
         email: '',
@@ -129,6 +131,7 @@ const Staff = () => {
         name: '',
         role: 'Doctor',
         specialization: '',
+        nic: '',
         department: '',
         contact: '',
         email: '',
@@ -165,6 +168,7 @@ const Staff = () => {
       name: staffMember.name,
       role: staffMember.role,
       specialization: staffMember.specialization || '',
+      nic: staffMember.nic || '',
       department: staffMember.department,
       contact: staffMember.contact,
       email: staffMember.email,
@@ -181,6 +185,7 @@ const Staff = () => {
       name: '',
       role: 'Doctor',
       specialization: '',
+      nic: '',
       department: '',
       contact: '',
       email: '',
@@ -284,6 +289,24 @@ const Staff = () => {
 
             <div className="form-row">
               <div className="form-group">
+                <label htmlFor="nic">NIC Number</label>
+                <input
+                  type="text"
+                  id="nic"
+                  name="nic"
+                  value={formData.nic}
+                  onChange={handleInputChange}
+                  pattern="[0-9]{9}[A-Za-z]"
+                  title="Must be 9 numbers followed by 1 alphabet"
+                  required
+                  placeholder="Enter NIC (e.g., 123456789V)"
+                />
+              </div>
+              
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
                 <label htmlFor="status">Status:</label>
                 <select
                   id="status"
@@ -293,7 +316,6 @@ const Staff = () => {
                   className="form-input"
                 >
                   <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
                   <option value="On Leave">On Leave</option>
                 </select>
               </div>
@@ -317,7 +339,6 @@ const Staff = () => {
                   className="form-input"
                 >
                   <option value="Morning">Morning</option>
-                  <option value="Afternoon">Afternoon</option>
                   <option value="Evening">Evening</option>
                 </select>
               </div>
@@ -373,15 +394,15 @@ const Staff = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Specialization</th>
-                    <th>Department</th>
-                    <th>Contact</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Shift</th>
-                    <th>Actions</th>
+                    <th className="name-col">Name</th>
+                    <th className="role-col">Role</th>
+                    <th className="specialization-col">Specialization</th>
+                    <th className="nic-col">NIC</th>
+                    <th className="contact-col">Contact Number</th>
+                    <th className="email-col">Email</th>
+                    <th className="status-col">Status</th>
+                    <th className="shift-col">Shift</th>
+                    <th className="action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -394,9 +415,9 @@ const Staff = () => {
                       <tr key={staffMember._id}>
                         <td>{staffMember.name}</td>
                         <td>{staffMember.role}</td>
-                        <td>{staffMember.specialization || '-'}</td>
-                        <td>{staffMember.department}</td>
-                        <td>{staffMember.contact}</td>
+                        <td className="specialization-cell">{staffMember.specialization || '-'}</td>
+                        <td className="nic-cell">{staffMember.nic}</td>
+                        <td className="contact-cell">{staffMember.contact || '-'}</td>
                         <td>{staffMember.email}</td>
                         <td>
                           <span className={`status-badge status-${staffMember.status?.toLowerCase().replace(' ', '-')}`}>
@@ -404,29 +425,27 @@ const Staff = () => {
                         </span>
                       </td>
                       <td>
-                        <span className={`shift-badge ${staffMember.shift ? staffMember.shift.toLowerCase() : 'morning'}`}>
+                        <span className={`shift-badge shift-${staffMember.shift ? staffMember.shift.toLowerCase() : 'morning'}`}>
                           {staffMember.shift || 'Morning'}
                         </span>
                       </td>
-                      <td>
-                          <div className="action-buttons">
-                            <button
-                              className="edit-btn"
-                              onClick={() => handleEdit(staffMember)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="delete-btn"
-                              onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this staff member?')) {
-                                  handleDelete(staffMember._id);
-                                }
-                              }}
-                            >
-                              Delete
-                            </button>
-                        </div>
+                      <td className="action-buttons">
+                        <button
+                          className="edit-btn"
+                          onClick={() => handleEdit(staffMember)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="delete-btn"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this staff member?')) {
+                              handleDelete(staffMember._id);
+                            }
+                          }}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                     ))
