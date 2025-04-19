@@ -17,6 +17,7 @@ import {
 const Invoice = () => {
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [invoiceData, setInvoiceData] = useState({
     patientId: "",
     patientName: "",
@@ -81,6 +82,7 @@ const Invoice = () => {
     // Load patients first, then invoices to ensure proper patient data is available
     const loadData = async () => {
       await fetchPatients();
+      await fetchDoctors();
       await fetchInvoices();
     };
     loadData();
@@ -96,6 +98,17 @@ const Invoice = () => {
     } catch (error) {
       console.error("Error fetching patients:", error);
       return [];
+    }
+  };
+
+  // Fetch doctors data
+  const fetchDoctors = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/staff');
+      const doctors = response.data.filter(staff => staff.role === 'Doctor');
+      setDoctors(doctors);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
     }
   };
 
@@ -588,13 +601,19 @@ const Invoice = () => {
               </div>
               <div className="form-group">
                 <label>Doctor</label>
-                <input
-                  type="text"
+                <select
                   name="doctorName"
-                  placeholder="Doctor Name"
                   value={invoiceData.doctorName}
                   onChange={handleChange}
-                />
+                  required
+                >
+                  <option value="">Select Doctor</option>
+                  {doctors.map(doctor => (
+                    <option key={doctor._id} value={doctor.name}>
+                      {doctor.name} - {doctor.specialization || 'General'}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             
