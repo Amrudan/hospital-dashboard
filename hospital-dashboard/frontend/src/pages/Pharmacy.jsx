@@ -376,11 +376,17 @@ const Pharmacy = () => {
             data={categoryData}
             options={{
               responsive: true,
+              maintainAspectRatio: false,
               plugins: {
                 legend: {
                   position: 'top',
                 }
               }
+            }}
+            style={{
+              width: '250px',
+              height: '250px',
+              margin: '0 auto'
             }}
           />
         </div>

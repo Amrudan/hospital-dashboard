@@ -1,13 +1,15 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, Component } from 'react';
-import Sidebar from './components/Sidebar';
+import Login from './pages/Login';
+import PatientDashboard from './pages/PatientDashboard';
 import Dashboard from './pages/Dashboard';
-import Staff from './pages/Staff';
-import Lab from './pages/Lab';
-import Ward from './pages/Ward';
-import Pharmacy from './pages/Pharmacy';
 import Patients from './pages/Patients';
+import Staff from './pages/Staff';
+import Ward from './pages/Ward';
+import Lab from './pages/Lab';
+import Pharmacy from './pages/Pharmacy';
 import Invoice from './pages/Invoice';
+import AdminLayout from './components/AdminLayout';
 import './App.css';
 
 // Error Boundary to catch rendering errors
@@ -81,18 +83,49 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="app">
-        <Sidebar />
-        <div className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/staff" element={<Staff />} />
-            <Route path="/lab" element={<Lab />} />
-            <Route path="/ward" element={<Ward />} />
-            <Route path="/pharmacy" element={<Pharmacy />} />
-            <Route path="/patient" element={<Patients />} />
-            <Route path="/invoice" element={<Invoice />} />
-          </Routes>
-        </div>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/patient-dashboard" element={<PatientDashboard />} />
+          
+          {/* Admin Routes in correct order */}
+          <Route path="/admin-dashboard" element={
+            <AdminLayout>
+              <Dashboard />
+            </AdminLayout>
+          } />
+          <Route path="/patients" element={
+            <AdminLayout>
+              <Patients />
+            </AdminLayout>
+          } />
+          <Route path="/staff" element={
+            <AdminLayout>
+              <Staff />
+            </AdminLayout>
+          } />
+          <Route path="/ward" element={
+            <AdminLayout>
+              <Ward />
+            </AdminLayout>
+          } />
+          <Route path="/lab" element={
+            <AdminLayout>
+              <Lab />
+            </AdminLayout>
+          } />
+          <Route path="/pharmacy" element={
+            <AdminLayout>
+              <Pharmacy />
+            </AdminLayout>
+          } />
+          <Route path="/invoice" element={
+            <AdminLayout>
+              <Invoice />
+            </AdminLayout>
+          } />
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
     </ErrorBoundary>
   );
