@@ -11,26 +11,41 @@ import {
   FaTrash, 
   FaDownload, 
   FaShieldAlt, 
-  FaFileInvoice 
+  FaFileInvoice,
+  FaCreditCard,
+  FaMoneyBillAlt,
+  FaMobileAlt,
+  FaUniversity
 } from "react-icons/fa";
 
 const Invoice = () => {
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [wards, setWards] = useState([]);
   const [invoiceData, setInvoiceData] = useState({
     patientId: "",
     patientName: "",
     doctorName: "",
     labName: "",
     treatment: "",
+    wardId: "",
     wardNumber: "",
     totalAmount: "",
-    governmentScheme: ""
+    governmentScheme: "",
+    paymentMethod: ""
   });
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("All Invoices");
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: '',
+    cardholderName: '',
+    expiryDate: '',
+    cvv: ''
+  });
 
   const treatments = [
     'Select Treatment',
@@ -74,7 +89,18 @@ const Invoice = () => {
     gpay: "hospital@upi",
     phonepay: "hospital@ybl",
     merchantName: "Hospital Management System",
-    merchantId: "HMS001"
+    merchantId: "HMS001",
+    bankAccount: {
+      accountNumber: "1234567890",
+      accountName: "Hospital Management System",
+      bankName: "State Bank",
+      ifsc: "SBI0001234",
+      branch: "Main Branch"
+    },
+    cardTerminal: {
+      terminalId: "TRM12345",
+      merchantCode: "HOSP998877"
+    }
   };
 
   // Initial data load
@@ -83,6 +109,7 @@ const Invoice = () => {
     const loadData = async () => {
       await fetchPatients();
       await fetchDoctors();
+      await fetchWards();
       await fetchInvoices();
     };
     loadData();
@@ -109,6 +136,19 @@ const Invoice = () => {
       setDoctors(doctors);
     } catch (error) {
       console.error("Error fetching doctors:", error);
+    }
+  };
+
+  // Fetch wards data
+  const fetchWards = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/wards');
+      console.log("Fetched wards:", response.data);
+      setWards(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+      return [];
     }
   };
 
@@ -190,9 +230,31 @@ const Invoice = () => {
         [name]: value,
         totalAmount: discountedAmount
       });
+    } else if (name === "wardId") {
+      const selectedWard = wards.find(ward => ward._id === value);
+      if (selectedWard) {
+        setInvoiceData({
+          ...invoiceData,
+          [name]: value,
+          wardNumber: selectedWard.wardNumber
+        });
+      }
     } else {
       setInvoiceData({ ...invoiceData, [name]: value });
     }
+  };
+
+  // Handle payment method selection
+  const handlePaymentMethodSelect = (method) => {
+    setInvoiceData({
+      ...invoiceData,
+      paymentMethod: method
+    });
+  };
+
+  // Toggle payment options visibility
+  const togglePaymentOptions = () => {
+    setShowPaymentOptions(!showPaymentOptions);
   };
 
   // Save or update invoice
@@ -224,6 +286,7 @@ const Invoice = () => {
         treatment: invoiceData.treatment || 'General Checkup',
         wardNumber: invoiceData.wardNumber || '',
         governmentScheme: invoiceData.governmentScheme || 'None',
+        paymentMethod: invoiceData.paymentMethod || 'Pending',
         invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
         issueDate: new Date(),
         dueDate: new Date(Date.now() + 30*24*60*60*1000),
@@ -239,7 +302,7 @@ const Invoice = () => {
         subtotal: treatmentCosts[invoiceData.treatment] || 0,
         discount: treatmentCosts[invoiceData.treatment] - parseFloat(invoiceData.totalAmount || 0) || 0,
         total: parseFloat(invoiceData.totalAmount || 0),
-        paymentStatus: 'Unpaid'
+        paymentStatus: invoiceData.paymentMethod ? 'Paid' : 'Unpaid'
       };
 
       console.log("Saving invoice with data:", invoiceToSave);
@@ -309,8 +372,10 @@ const Invoice = () => {
       treatment: "",
       wardNumber: "",
       totalAmount: "",
-      governmentScheme: ""
+      governmentScheme: "",
+      paymentMethod: ""
     });
+    setShowPaymentOptions(false);
     setEditingIndex(null);
   };
 
@@ -553,6 +618,44 @@ const Invoice = () => {
     return matchesSearch;
   });
 
+  // Generate QR code for UPI payment
+  useEffect(() => {
+    if (invoiceData.paymentMethod === 'UPI' && invoiceData.totalAmount) {
+      const amount = parseFloat(invoiceData.totalAmount).toFixed(2);
+      const upiUrl = `upi://pay?pa=${paymentDetails.gpay}&pn=${encodeURIComponent(paymentDetails.merchantName)}&am=${amount}&cu=INR`;
+      
+      // Generate QR code
+      QRCode.toDataURL(upiUrl, {
+        color: {
+          dark: '#1a2980',
+          light: '#ffffff'
+        },
+        width: 200,
+        margin: 2
+      })
+      .then(url => {
+        setQrCodeUrl(url);
+      })
+      .catch(err => {
+        console.error('Error generating QR code:', err);
+      });
+    }
+  }, [invoiceData.paymentMethod, invoiceData.totalAmount]);
+
+  // Handle credit card input changes
+  const handleCardDetailChange = (e) => {
+    const { name, value } = e.target;
+    setCardDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Format credit card number with spaces
+  const formatCardNumber = (value) => {
+    return value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
+  };
+
   return (
     <div className="invoice-container">
       <div className="invoice-header">
@@ -646,14 +749,19 @@ const Invoice = () => {
             
             <div className="form-row">
               <div className="form-group">
-                <label>Ward Number</label>
-                <input
-                  type="text"
-                  name="wardNumber"
-                  placeholder="Ward Number"
-                  value={invoiceData.wardNumber}
+                <label>Ward</label>
+                <select
+                  name="wardId"
+                  value={invoiceData.wardId}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Select Ward</option>
+                  {wards.map(ward => (
+                    <option key={ward._id} value={ward._id}>
+                      {ward.wardNumber} - {ward.wardType}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Total Amount</label>
@@ -661,6 +769,182 @@ const Invoice = () => {
                   ₹{invoiceData.totalAmount ? parseFloat(invoiceData.totalAmount).toFixed(2) : "0.00"}
                 </div>
               </div>
+            </div>
+            
+            {/* Payment Method Selection */}
+            <div className="payment-section">
+              <button 
+                className="payment-toggle-btn" 
+                onClick={togglePaymentOptions}
+              >
+                {invoiceData.paymentMethod ? `Payment: ${invoiceData.paymentMethod}` : "Select Payment Method"}
+              </button>
+              
+              {showPaymentOptions && (
+                <div className="payment-options-container">
+                  <div className="payment-options">
+                    <div className={`payment-option ${invoiceData.paymentMethod === 'Cash' ? 'selected' : ''}`} onClick={() => handlePaymentMethodSelect('Cash')}>
+                      <FaMoneyBillAlt className="payment-icon" />
+                      <span>Cash</span>
+                    </div>
+                    <div className={`payment-option ${invoiceData.paymentMethod === 'Credit Card' ? 'selected' : ''}`} onClick={() => handlePaymentMethodSelect('Credit Card')}>
+                      <FaCreditCard className="payment-icon" />
+                      <span>Credit Card</span>
+                    </div>
+                    <div className={`payment-option ${invoiceData.paymentMethod === 'Debit Card' ? 'selected' : ''}`} onClick={() => handlePaymentMethodSelect('Debit Card')}>
+                      <FaCreditCard className="payment-icon" />
+                      <span>Debit Card</span>
+                    </div>
+                    <div className={`payment-option ${invoiceData.paymentMethod === 'UPI' ? 'selected' : ''}`} onClick={() => handlePaymentMethodSelect('UPI')}>
+                      <FaMobileAlt className="payment-icon" />
+                      <span>UPI</span>
+                    </div>
+                    <div className={`payment-option ${invoiceData.paymentMethod === 'Bank Transfer' ? 'selected' : ''}`} onClick={() => handlePaymentMethodSelect('Bank Transfer')}>
+                      <FaUniversity className="payment-icon" />
+                      <span>Bank Transfer</span>
+                    </div>
+                  </div>
+                  
+                  {/* Payment Method Details */}
+                  {invoiceData.paymentMethod && (
+                    <div className="payment-details">
+                      {invoiceData.paymentMethod === 'Cash' && (
+                        <div className="payment-method-details">
+                          <h4>Cash Payment</h4>
+                          <div className="detail-row">
+                            <p><strong>Amount to Collect:</strong> ₹{invoiceData.totalAmount ? parseFloat(invoiceData.totalAmount).toFixed(2) : "0.00"}</p>
+                            <p><strong>Instructions:</strong> Please collect the exact amount and provide a receipt.</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(invoiceData.paymentMethod === 'Credit Card' || invoiceData.paymentMethod === 'Debit Card') && (
+                        <div className="payment-method-details">
+                          <h4>{invoiceData.paymentMethod} Payment</h4>
+                          <div className="detail-row">
+                            <p><strong>Terminal ID:</strong> {paymentDetails.cardTerminal.terminalId}</p>
+                            <p><strong>Merchant Code:</strong> {paymentDetails.cardTerminal.merchantCode}</p>
+                          </div>
+                          
+                          <div className="card-form">
+                            <div className="form-group">
+                              <label>Card Number</label>
+                              <input
+                                type="text"
+                                name="cardNumber"
+                                placeholder="1234 5678 9012 3456"
+                                value={formatCardNumber(cardDetails.cardNumber)}
+                                onChange={(e) => handleCardDetailChange({
+                                  target: {
+                                    name: 'cardNumber',
+                                    value: e.target.value.replace(/\s/g, '').substring(0, 16)
+                                  }
+                                })}
+                                maxLength="19"
+                              />
+                            </div>
+                            
+                            <div className="form-group">
+                              <label>Cardholder Name</label>
+                              <input
+                                type="text"
+                                name="cardholderName"
+                                placeholder="Name on card"
+                                value={cardDetails.cardholderName}
+                                onChange={handleCardDetailChange}
+                              />
+                            </div>
+                            
+                            <div className="card-form-row">
+                              <div className="form-group expiry">
+                                <label>Expiry Date</label>
+                                <input
+                                  type="text"
+                                  name="expiryDate"
+                                  placeholder="MM/YY"
+                                  value={cardDetails.expiryDate}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    if (value.length <= 4) {
+                                      let formatted = value;
+                                      if (value.length > 2) {
+                                        formatted = value.substring(0, 2) + '/' + value.substring(2);
+                                      }
+                                      handleCardDetailChange({
+                                        target: {
+                                          name: 'expiryDate',
+                                          value: formatted
+                                        }
+                                      });
+                                    }
+                                  }}
+                                  maxLength="5"
+                                />
+                              </div>
+                              
+                              <div className="form-group cvv">
+                                <label>CVV</label>
+                                <input
+                                  type="password"
+                                  name="cvv"
+                                  placeholder="123"
+                                  value={cardDetails.cvv}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    if (value.length <= 3) {
+                                      handleCardDetailChange({
+                                        target: {
+                                          name: 'cvv',
+                                          value
+                                        }
+                                      });
+                                    }
+                                  }}
+                                  maxLength="3"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <p className="instructions">Please verify card details before proceeding.</p>
+                        </div>
+                      )}
+                      
+                      {invoiceData.paymentMethod === 'UPI' && (
+                        <div className="payment-method-details">
+                          <h4>UPI Payment</h4>
+                          <p>Scan the QR code or use UPI ID: {paymentDetails.gpay}</p>
+                          <div className="qr-code">
+                            {qrCodeUrl ? (
+                              <img src={qrCodeUrl} alt="UPI QR Code" width="200" height="200" />
+                            ) : (
+                              <div className="qr-placeholder">
+                                Generating QR code...
+                              </div>
+                            )}
+                          </div>
+                          <p className="instructions">Open any UPI app (GPay, PhonePe, Paytm) and scan to pay.</p>
+                        </div>
+                      )}
+                      
+                      {invoiceData.paymentMethod === 'Bank Transfer' && (
+                        <div className="payment-method-details">
+                          <h4>Bank Transfer Details</h4>
+                          <div className="detail-row">
+                            <p><strong>Account Name:</strong> {paymentDetails.bankAccount.accountName}</p>
+                            <p><strong>Account Number:</strong> {paymentDetails.bankAccount.accountNumber}</p>
+                          </div>
+                          <div className="detail-row">
+                            <p><strong>Bank Name:</strong> {paymentDetails.bankAccount.bankName}</p>
+                            <p><strong>IFSC Code:</strong> {paymentDetails.bankAccount.ifsc}</p>
+                          </div>
+                          <p className="instructions">Please include the Invoice Number as payment reference.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             {invoiceData.governmentScheme && invoiceData.governmentScheme !== 'None' && (
