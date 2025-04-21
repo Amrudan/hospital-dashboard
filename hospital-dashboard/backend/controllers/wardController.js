@@ -12,7 +12,9 @@ exports.getAllWards = async (req, res) => {
       wardType: ward.type,
       capacity: ward.capacity,
       currentOccupancy: ward.occupiedBeds,
-      nurseInCharge: ward.assignedStaff.length > 0 ? ward.assignedStaff[0].name : '',
+      nurseInCharge: ward.assignedStaff && ward.assignedStaff.length > 0 
+        ? ward.assignedStaff.find(staff => staff.role.toLowerCase === 'Nurse')?.name 
+        : 'Not Assigned',
       status: ward.status === 'Operational' ? 'Active' : ward.status === 'Under Maintenance' ? 'Maintenance' : ward.status,
       floor: `${ward.floorNumber}${getOrdinalSuffix(ward.floorNumber)} Floor`,
       description: '',

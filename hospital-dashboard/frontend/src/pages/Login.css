@@ -146,19 +146,17 @@
 }
 
 .signup-link {
+  text-align: center;
+  margin-top: 1rem;
   color: #666;
-  font-size: 0.9rem;
 }
 
 .signup-link a {
-  color: #1a2980;
+  color: #2196f3;
   text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
 }
 
 .signup-link a:hover {
-  color: #26d0ce;
   text-decoration: underline;
 }
 

@@ -18,6 +18,7 @@ const patientRoutes = require('./routes/patients');
 const staffRoutes = require('./routes/staff');
 const wardRoutes = require('./routes/wards');
 const labRoutes = require('./routes/lab');
+// const labRoutes = require('./routes/labs');
 const pharmacyRoutes = require('./routes/pharmacy');
 const invoiceRoutes = require('./routes/invoices');
 

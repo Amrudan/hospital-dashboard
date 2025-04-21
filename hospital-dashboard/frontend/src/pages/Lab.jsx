@@ -178,7 +178,6 @@ const Lab = () => {
 
   return (
     <div className="lab-management-page">
-      <h2>Lab Management</h2>
       
       {error && <div className="error-message">{error}</div>}
 

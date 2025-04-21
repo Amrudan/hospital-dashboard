@@ -15,7 +15,8 @@ const Staff = () => {
     email: '',
     status: 'Active',
     salary: '',
-    shift: 'Morning'
+    shift: 'Morning',
+    experience: ''
   });
 
   const [staff, setStaff] = useState([]);
@@ -100,7 +101,8 @@ const Staff = () => {
         email: '',
         status: 'Active',
         salary: '',
-        shift: 'Morning'
+        shift: 'Morning',
+        experience: ''
       });
       
       showSuccess('Staff registered successfully!');
@@ -137,7 +139,8 @@ const Staff = () => {
         email: '',
         status: 'Active',
         salary: '',
-        shift: 'Morning'
+        shift: 'Morning',
+        experience: ''
       });
       
       showSuccess('Staff updated successfully!');
@@ -174,7 +177,8 @@ const Staff = () => {
       email: staffMember.email,
       status: staffMember.status,
       salary: staffMember.salary || '',
-      shift: staffMember.shift || 'Morning'
+      shift: staffMember.shift || 'Morning',
+      experience: staffMember.experience || ''
     });
     setShowForm(true);
     setShowStaffList(false);
@@ -192,13 +196,13 @@ const Staff = () => {
       status: 'Active',
       salary: '',
       shift: 'Morning',
+      experience: ''
     });
     setSelectedStaff(null);
   };
 
   return (
     <div className="staff-page">
-      <h2>Staff Management</h2>
       
       <div className="staff-actions">
         <button 
@@ -344,6 +348,35 @@ const Staff = () => {
               </div>
             </div>
 
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="experience">Years of Experience</label>
+                <input
+                  type="number"
+                  id="experience"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleInputChange}
+                  min="0"
+                  max="50"
+                  placeholder="Enter years of experience"
+                  className="form-input"
+                />
+              </div>
+              {/* <div className="form-group">
+                <label htmlFor="salary">Salary</label>
+                <input
+                  type="number"
+                  id="salary"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleInputChange}
+                  placeholder="Enter salary"
+                  className="form-input"
+                />
+              </div> */}
+            </div>
+
             <div className="form-actions">
               <button type="submit" className="form-button submit-btn">
                 {selectedStaff ? 'Update Staff' : 'Add Staff'}
@@ -397,6 +430,7 @@ const Staff = () => {
                     <th className="name-col">Name</th>
                     <th className="role-col">Role</th>
                     <th className="specialization-col">Specialization</th>
+                    <th className="experience-col">Experience</th>
                     <th className="nic-col">NIC</th>
                     <th className="contact-col">Contact Number</th>
                     <th className="email-col">Email</th>
@@ -408,7 +442,7 @@ const Staff = () => {
                 <tbody>
                   {filteredStaff.length === 0 ? (
                     <tr>
-                      <td colSpan="9" className="no-data">No staff found</td>
+                      <td colSpan="10" className="no-data">No staff found</td>
                     </tr>
                   ) : (
                     filteredStaff.map(staffMember => (
@@ -416,6 +450,9 @@ const Staff = () => {
                         <td>{staffMember.name}</td>
                         <td>{staffMember.role}</td>
                         <td className="specialization-cell">{staffMember.specialization || '-'}</td>
+                        <td className="experience-cell">
+                          {staffMember.experience ? `${staffMember.experience} years` : '0 years'}
+                        </td>
                         <td className="nic-cell">{staffMember.nic}</td>
                         <td className="contact-cell">{staffMember.contact || '-'}</td>
                         <td>{staffMember.email}</td>

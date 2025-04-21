@@ -586,7 +586,6 @@ const Patients = () => {
 
   return (
     <div className="management-page">
-      <h2>Patient Management</h2>
       
       <div className="patient-actions">
         <button 

@@ -23,6 +23,10 @@ const Dashboard = () => {
   const [recentPatients, setRecentPatients] = useState([]);
   const [wardOccupancyData, setWardOccupancyData] = useState([]);
   const [staffOnDuty, setStaffOnDuty] = useState([]);
+  const [topDoctors, setTopDoctors] = useState([]);
+  const [error, setError] = useState(null);
+  const [doctorsBySpecialization, setDoctorsBySpecialization] = useState({});
+  const [selectedSpecialization, setSelectedSpecialization] = useState(null);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -99,6 +103,34 @@ const Dashboard = () => {
       // Set chart data based on selected time range
       updateTimeRange(activeTab);
       
+      // Fetch top doctors
+      const topDoctorsResponse = await staffApi.getAllStaff();
+      const topDoctorsData = topDoctorsResponse.data;
+      const sortedTopDoctors = topDoctorsData
+        .sort((a, b) => (b.experience || 0) - (a.experience || 0))
+        .slice(0, 3);
+      setTopDoctors(sortedTopDoctors);
+      
+      // Group doctors by specialization
+      const groupedDoctors = topDoctorsData.reduce((acc, doctor) => {
+        const specialization = doctor.specialization || 'General Medicine';
+        if (!acc[specialization]) {
+          acc[specialization] = [];
+        }
+        acc[specialization].push(doctor);
+        return acc;
+      }, {});
+
+      // Sort each specialization group by experience and take top 3
+      Object.keys(groupedDoctors).forEach(specialization => {
+        groupedDoctors[specialization] = groupedDoctors[specialization]
+          .sort((a, b) => (b.experience || 0) - (a.experience || 0))
+          .slice(0, 3);
+      });
+
+      setDoctorsBySpecialization(groupedDoctors);
+      setSelectedSpecialization(Object.keys(groupedDoctors)[0]);
+      
       setPatientsLoading(false);
       setLoading(false);
     } catch (error) {
@@ -116,47 +148,47 @@ const Dashboard = () => {
     switch(range) {
       case 'day':
         data = [
-          { time: '8am', visits: 12 },
-          { time: '10am', visits: 18 },
-          { time: '12pm', visits: 22 },
-          { time: '2pm', visits: 25 },
-          { time: '4pm', visits: 20 },
-          { time: '6pm', visits: 15 },
+          { time: '8am', visits: 5 },
+          { time: '10am', visits: 7 },
+          { time: '12pm', visits: 21 },
+          { time: '2pm', visits: 15 },
+          { time: '4pm', visits: 5 },
+          { time: '6pm', visits: 2 },
         ];
         break;
       case 'month':
         data = [
-          { time: 'Week 1', visits: 280 },
-          { time: 'Week 2', visits: 320 },
-          { time: 'Week 3', visits: 305 },
-          { time: 'Week 4', visits: 350 },
+          { time: 'Week 1', visits: 28 },
+          { time: 'Week 2', visits: 32 },
+          { time: 'Week 3', visits: 30 },
+          { time: 'Week 4', visits: 35 },
         ];
         break;
       case 'year':
         data = [
-          { time: 'Jan', visits: 1250 },
-          { time: 'Feb', visits: 1100 },
-          { time: 'Mar', visits: 1350 },
-          { time: 'Apr', visits: 1200 },
-          { time: 'May', visits: 1400 },
-          { time: 'Jun', visits: 1500 },
-          { time: 'Jul', visits: 1300 },
-          { time: 'Aug', visits: 1450 },
-          { time: 'Sep', visits: 1600 },
-          { time: 'Oct', visits: 1550 },
-          { time: 'Nov', visits: 1700 },
-          { time: 'Dec', visits: 1800 },
+          { time: 'Jan', visits: 125 },
+          { time: 'Feb', visits: 110 },
+          { time: 'Mar', visits: 135 },
+          { time: 'Apr', visits: 120 },
+          { time: 'May', visits: 140 },
+          { time: 'Jun', visits: 150 },
+          { time: 'Jul', visits: 130 },
+          { time: 'Aug', visits: 145 },
+          { time: 'Sep', visits: 160 },
+          { time: 'Oct', visits: 155 },
+          { time: 'Nov', visits: 170 },
+          { time: 'Dec', visits: 180 },
         ];
         break;
       default: // week
         data = [
-          { name: 'Mon', visits: 45 },
-          { name: 'Tue', visits: 52 },
-          { name: 'Wed', visits: 49 },
-          { name: 'Thu', visits: 63 },
-          { name: 'Fri', visits: 58 },
-          { name: 'Sat', visits: 48 },
-          { name: 'Sun', visits: 42 },
+          { name: 'Mon', visits: 14 },
+          { name: 'Tue', visits: 15 },
+          { name: 'Wed', visits: 19 },
+          { name: 'Thu', visits: 13 },
+          { name: 'Fri', visits: 18 },
+          { name: 'Sat', visits: 18 },
+          { name: 'Sun', visits: 12 },
         ];
     }
     
@@ -186,7 +218,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      <h1 className="dashboard-title">Hospital Dashboard</h1>
       
       {/* Stats Cards */}
       <div className="stats-grid">
@@ -497,7 +528,7 @@ const Dashboard = () => {
         </div>
         
         <div className="table-section animate-in" style={{animationDelay: '0.5s'}}>
-          <h3>Staff on Duty</h3>
+          <h3>Staff on Duty(Doctors)</h3>
           <table className="data-table">
             <thead>
               <tr>
@@ -527,6 +558,52 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+      </div>
+      
+      {/* Top Doctors by Specialization Section */}
+      <div className="dashboard-section">
+        <h2>Top Doctors by Specialization</h2>
+        {loading ? (
+          <div className="loading">Loading...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : (
+          <div className="specialization-container">
+            <div className="specialization-selector">
+              <select 
+                value={selectedSpecialization || ''}
+                onChange={(e) => setSelectedSpecialization(e.target.value)}
+                className="specialization-dropdown"
+              >
+                {Object.keys(doctorsBySpecialization).map(specialization => (
+                  <option key={specialization} value={specialization}>
+                    {specialization}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedSpecialization && (
+              <div className="doctors-cards-container">
+                {doctorsBySpecialization[selectedSpecialization].map((doctor, index) => (
+                  <div key={doctor._id || index} className="doctor-card">
+                    <div className="rank-badge">#{index + 1}</div>
+                    <div className="doctor-info">
+                      <h3>{doctor.name}</h3>
+                      <p className="specialization">{selectedSpecialization}</p>
+                      <p className="experience">{doctor.experience || 0} years of experience</p>
+                      <p className="status">
+                        Status: <span className={`status-badge ${doctor.status?.toLowerCase()}`}>
+                          {doctor.status || 'Active'}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
       {/* All Patients Table */}

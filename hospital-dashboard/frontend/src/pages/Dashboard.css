@@ -559,4 +559,384 @@
   .all-patients-section {
     padding: 1rem;
   }
+}
+
+.dashboard-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-section h2 {
+  color: #2d3748;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.top-doctors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.doctor-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.doctor-card:hover {
+  transform: translateY(-2px);
+}
+
+.doctor-info h3 {
+  color: #2d3748;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.specialization {
+  color: #4a5568;
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+}
+
+.experience {
+  color: #4a5568;
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+}
+
+.status {
+  color: #4a5568;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.status-badge.on-leave {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.status-badge.resigned {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #4a5568;
+}
+
+.error {
+  text-align: center;
+  padding: 20px;
+  color: #e53e3e;
+}
+
+.specialization-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.specialization-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.specialization-card h3 {
+  color: #2d3748;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.doctors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doctor-card {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
+}
+
+.doctor-card:hover {
+  transform: translateY(-2px);
+}
+
+.doctor-info h4 {
+  color: #2d3748;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.experience {
+  color: #4a5568;
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+}
+
+.status {
+  color: #4a5568;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.status-badge.on-leave {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.status-badge.resigned {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.specialization-dropdown-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.specialization-selector {
+  margin-bottom: 20px;
+}
+
+.specialization-dropdown {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  color: #2d3748;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.specialization-dropdown:hover {
+  border-color: #4299e1;
+}
+
+.specialization-dropdown:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}
+
+.doctors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.doctor-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.doctor-item:hover {
+  transform: translateX(5px);
+}
+
+.rank {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #4299e1;
+  min-width: 30px;
+  margin-right: 15px;
+}
+
+.doctor-details h3 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+}
+
+.doctor-details p {
+  margin: 5px 0 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.specialization-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.specialization-selector {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.specialization-dropdown {
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  color: #2d3748;
+  cursor: pointer;
+  min-width: 300px;
+  transition: all 0.2s;
+}
+
+.specialization-dropdown:hover {
+  border-color: #4299e1;
+}
+
+.specialization-dropdown:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}
+
+.doctors-cards-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.doctor-card {
+  flex: 1;
+  max-width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.doctor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rank-badge {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background: #4299e1;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.doctor-info {
+  text-align: center;
+}
+
+.doctor-info h3 {
+  margin: 0 0 10px;
+  color: #2d3748;
+  font-size: 1.2rem;
+}
+
+.specialization {
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.experience {
+  color: #2d3748;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.status {
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.status-badge.on-leave {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.status-badge.resigned {
+  background-color: #e2e8f0;
+  color: #4a5568;
 } 

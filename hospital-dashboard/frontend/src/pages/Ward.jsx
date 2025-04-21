@@ -38,6 +38,8 @@ const Ward = () => {
 
   const [selectedWardFromSearch, setSelectedWardFromSearch] = useState(null);
 
+  const [nurses, setNurses] = useState([]);
+
   // Fetch wards data
   useEffect(() => {
     fetchWards();
@@ -153,52 +155,41 @@ const Ward = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting form data:', formData);  // Debug log
-    setError(null); // Clear any previous errors
-    
     try {
-      setLoading(true);
-      // Validation
-      if (!formData.wardNumber || !formData.wardType || !formData.capacity || !formData.floor) {
-        setError('Please fill in all required fields');
-        return;
-      }
-
-      // Convert capacity and occupancy to numbers
-      const wardData = {
-        ...formData,
-        capacity: parseInt(formData.capacity),
-        currentOccupancy: formData.currentOccupancy ? parseInt(formData.currentOccupancy) : 0
-      };
-
-      // Validate occupancy doesn't exceed capacity
-      if (wardData.currentOccupancy > wardData.capacity) {
-        setError('Current occupancy cannot exceed ward capacity');
-        return;
-      }
-
-      let response;
-      if (isEditing) {
-        // Update existing ward
-        response = await axios.put(`http://localhost:5000/api/wards/${selectedWard._id}`, wardData);
-        console.log('Updated ward:', response.data);  // Debug log
-        alert('Ward updated successfully!');
+      if (selectedWard) {
+        // Update ward
+        await axios.put(`http://localhost:5000/api/wards/${selectedWard._id}`, {
+          ...formData,
+          assignedStaff: [formData.nurseInCharge] // Assign the selected nurse
+        });
+        toast.success('Ward updated successfully');
       } else {
-        // Add new ward
-        response = await axios.post('http://localhost:5000/api/wards', wardData);
-        console.log('Added new ward:', response.data);  // Debug log
-        alert(`New ward ${response.data.wardNumber} added successfully!`);
+        // Create new ward
+        await axios.post('http://localhost:5000/api/wards', {
+          ...formData,
+          assignedStaff: [formData.nurseInCharge] // Assign the selected nurse
+        });
+        toast.success('Ward created successfully');
       }
-
-      await fetchWards(); // Refresh the list
-      handleCancel(); // Reset form
-    } catch (err) {
-      console.error('Error saving ward:', err);  // Debug log
-      const errorMessage = err.response?.data?.message || 'Failed to save ward. Please try again.';
-      setError(errorMessage);
-      alert(errorMessage);
-    } finally {
-      setLoading(false);
+      setIsEditing(false);
+      setSelectedWard(null);
+      setFormData({
+        wardNumber: '',
+        wardType: '',
+        capacity: '',
+        currentOccupancy: '',
+        nurseInCharge: '',
+        status: '',
+        floor: '',
+        description: '',
+        equipment: '',
+        lastMaintenance: '',
+        nextMaintenance: '',
+        specialNotes: ''
+      });
+      fetchWards();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'An error occurred');
     }
   };
 
@@ -431,9 +422,26 @@ const Ward = () => {
     }, 100);
   };
 
+  useEffect(() => {
+    const fetchNurses = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/staff');
+        const nursesList = response.data.filter(staff => staff.role === 'Nurse');
+        setNurses(nursesList);
+      } catch (error) {
+        console.error('Error fetching nurses:', error);
+      }
+    };
+    fetchNurses();
+  }, []);
+
+  const getNurseName = (nurseId) => {
+    const nurse = nurses.find(n => n._id === nurseId);
+    return nurse ? nurse.name : 'Not Assigned';
+  };
+
   return (
     <div className="ward-management-page">
-      <h2>Ward Management</h2>
       
       <div className="search-section">
         <div className="search-container">
@@ -545,12 +553,17 @@ const Ward = () => {
 
             <div className="form-group">
               <label>Nurse In Charge</label>
-              <input
-                type="text"
+              <select
                 name="nurseInCharge"
                 value={formData.nurseInCharge}
                 onChange={handleChange}
-              />
+                required
+              >
+                <option value="">Select Nurse</option>
+                {nurses.map(nurse => (
+                  <option key={nurse._id} value={nurse._id}>{nurse.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
@@ -684,7 +697,6 @@ const Ward = () => {
                   <th>Nurse In Charge</th>
                   <th>Status</th>
                   <th>Floor</th>
-                  <th>Next Maintenance</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -710,14 +722,13 @@ const Ward = () => {
                           <span>{ward.currentOccupancy}/{ward.capacity}</span>
                         </div>
                       </td>
-                      <td>{ward.nurseInCharge}</td>
+                      <td>{getNurseName(ward.nurseInCharge)}</td>
                       <td>
                         <span className={`status-badge ${ward.status?.toLowerCase()}`}>
                           {ward.status}
                         </span>
                       </td>
                       <td>{ward.floor}</td>
-                      <td>{ward.nextMaintenance ? new Date(ward.nextMaintenance).toLocaleDateString() : '-'}</td>
                       <td className="actions">
                         <button 
                           className="edit-btn" 

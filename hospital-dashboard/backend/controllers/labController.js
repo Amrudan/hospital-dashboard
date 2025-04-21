@@ -1,125 +1,99 @@
-const Lab = require('../models/Lab');
+const LabTest = require('../models/labTest');
 
-// Get all lab tests
-exports.getAllLabTests = async (req, res) => {
-  try {
-    const labTests = await Lab.find()
-      .populate('patient', 'name')
-      .populate('requestedBy', 'name role')
-      .populate('conductedBy', 'name role');
-    
-    res.status(200).json(labTests);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+const labController = {
+  // Get all lab tests
+  getAllLabTests: async (req, res) => {
+    try {
+      const tests = await LabTest.find();
+      res.json(tests);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  },
+
+  // Get lab tests by patient
+  getLabTestsByPatient: async (req, res) => {
+    try {
+      const tests = await LabTest.find({ patientId: req.params.patientId });
+      res.json(tests);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  },
+
+  // Get lab test by ID
+  getLabTestById: async (req, res) => {
+    try {
+      const test = await LabTest.findById(req.params.id);
+      if (!test) {
+        return res.status(404).json({ message: 'Test not found' });
+      }
+      res.json(test);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  },
+
+  // Create new lab test
+  createLabTest: async (req, res) => {
+    try {
+      const newTest = new LabTest({
+        ...req.body,
+        status: "In Process"
+      });
+      const savedTest = await newTest.save();
+      res.status(201).json(savedTest);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  },
+
+  // Update lab test
+  updateLabTest: async (req, res) => {
+    try {
+      const updatedTest = await LabTest.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+      if (!updatedTest) {
+        return res.status(404).json({ message: 'Test not found' });
+      }
+      res.json(updatedTest);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  },
+
+  // Delete lab test
+  deleteLabTest: async (req, res) => {
+    try {
+      const deletedTest = await LabTest.findByIdAndDelete(req.params.id);
+      if (!deletedTest) {
+        return res.status(404).json({ message: 'Test not found' });
+      }
+      res.json({ message: 'Test deleted successfully' });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  },
+
+  // Add test results
+  addTestResults: async (req, res) => {
+    try {
+      const test = await LabTest.findById(req.params.id);
+      if (!test) {
+        return res.status(404).json({ message: 'Test not found' });
+      }
+      
+      test.results = req.body.results;
+      test.status = "Successfully Completed";
+      const updatedTest = await test.save();
+      res.json(updatedTest);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
   }
 };
 
-// Get lab tests by patient ID
-exports.getLabTestsByPatient = async (req, res) => {
-  try {
-    const labTests = await Lab.find({ patient: req.params.patientId })
-      .populate('patient', 'name')
-      .populate('requestedBy', 'name role')
-      .populate('conductedBy', 'name role');
-    
-    if (labTests.length === 0) {
-      return res.status(404).json({ message: 'No lab tests found for this patient' });
-    }
-    
-    res.status(200).json(labTests);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get a single lab test
-exports.getLabTestById = async (req, res) => {
-  try {
-    const labTest = await Lab.findById(req.params.id)
-      .populate('patient', 'name')
-      .populate('requestedBy', 'name role')
-      .populate('conductedBy', 'name role');
-    
-    if (!labTest) {
-      return res.status(404).json({ message: 'Lab test not found' });
-    }
-    
-    res.status(200).json(labTest);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Create a new lab test
-exports.createLabTest = async (req, res) => {
-  try {
-    const newLabTest = new Lab(req.body);
-    const savedLabTest = await newLabTest.save();
-    
-    res.status(201).json(savedLabTest);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Update a lab test
-exports.updateLabTest = async (req, res) => {
-  try {
-    const updatedLabTest = await Lab.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    
-    if (!updatedLabTest) {
-      return res.status(404).json({ message: 'Lab test not found' });
-    }
-    
-    res.status(200).json(updatedLabTest);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Delete a lab test
-exports.deleteLabTest = async (req, res) => {
-  try {
-    const labTest = await Lab.findByIdAndDelete(req.params.id);
-    
-    if (!labTest) {
-      return res.status(404).json({ message: 'Lab test not found' });
-    }
-    
-    res.status(200).json({ message: 'Lab test deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Add test results
-exports.addTestResults = async (req, res) => {
-  try {
-    const { results, conductedBy, completionDate } = req.body;
-    
-    if (!results) {
-      return res.status(400).json({ message: 'Test results are required' });
-    }
-    
-    const labTest = await Lab.findById(req.params.id);
-    
-    if (!labTest) {
-      return res.status(404).json({ message: 'Lab test not found' });
-    }
-    
-    labTest.results = results;
-    if (conductedBy) labTest.conductedBy = conductedBy;
-    if (completionDate) labTest.completionDate = completionDate;
-    labTest.status = 'Completed';
-    
-    const updatedLabTest = await labTest.save();
-    
-    res.status(200).json(updatedLabTest);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};  
+module.exports = labController;  

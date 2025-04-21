@@ -1,6 +1,9 @@
 .staff-page {
   padding: 20px;
   background: #f5f5f5;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .page-title {
@@ -764,16 +767,13 @@ tbody tr:hover {
   border-collapse: separate;
   border-spacing: 0;
   margin-top: 15px;
+  box-sizing: border-box;
 }
 
 .data-table th,
 .data-table td {
   padding: 12px 8px;
-  text-align: center;
-  vertical-align: middle;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: left;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -866,36 +866,36 @@ tbody tr:hover {
 
 /* Update column widths */
 .specialization-col {
-  width: 35%; /* Increase specialization width */
-  min-width: 300px;
+  width: 25%; /* Reduced from 35% */
+  min-width: 200px; /* Reduced from 300px */
 }
 
 .role-col {
-  width: 6%; /* Decrease role width */
+  width: 8%; /* Increased from 6% */
 }
 
 .name-col {
-  width: 12%;
+  width: 15%; /* Increased from 12% */
 }
 
 .nic-col {
-  width: 10%;
+  width: 12%; /* Increased from 10% */
 }
 
 .contact-col {
-  width: 10%;
+  width: 12%; /* Increased from 10% */
 }
 
 .email-col {
-  width: 15%;
+  width: 12%; /* Reduced from 15% */
 }
 
 .status-col, .shift-col {
-  width: 7%;
+  width: 8%; /* Increased from 7% */
 }
 
 .action-col {
-  width: 8%;
+  width: 10%; /* Increased from 8% */
 }
 
 /* Specialization cell styling */
@@ -1012,4 +1012,116 @@ td:hover {
   width: 10%;
   padding-right: 1.5rem;
   text-align: right;
+}
+
+/* Experience field styles */
+.experience-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.experience-input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.experience-input::-webkit-inner-spin-button,
+.experience-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.experience-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Experience cell styles */
+.experience-cell {
+  font-weight: 500;
+  color: #2d3748;
+  text-align: center;
+}
+
+/* Table styles */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.data-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Status badge styles */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.status-on-leave {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+}
+
+.edit-btn:hover {
+  background-color: #3182ce;
+}
+
+.delete-btn {
+  background-color: #f56565;
+  color: white;
+  border: none;
+}
+
+.delete-btn:hover {
+  background-color: #e53e3e;
 }

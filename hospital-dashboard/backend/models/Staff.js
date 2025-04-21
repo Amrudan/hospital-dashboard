@@ -57,6 +57,11 @@ const staffSchema = new mongoose.Schema({
     type: String,
     enum: ['Active', 'On Leave', 'Resigned'],
     default: 'Active'
+  },
+  experience: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, { timestamps: true });
 
