@@ -21,6 +21,7 @@ const labRoutes = require('./routes/lab');
 // const labRoutes = require('./routes/labs');
 const pharmacyRoutes = require('./routes/pharmacy');
 const invoiceRoutes = require('./routes/invoices');
+app.use('/api/patient', require('./routes/patient'));
 
 app.use('/api/patients', patientRoutes);
 app.use('/api/staff', staffRoutes);

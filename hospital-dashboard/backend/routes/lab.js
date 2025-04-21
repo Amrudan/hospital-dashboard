@@ -1,26 +1,60 @@
 const express = require('express');
 const router = express.Router();
-const labController = require('../controllers/labController');
+const Lab = require('../models/lab');
 
-// GET all lab tests
-router.get('/', labController.getAllLabTests);
+// Get all lab tests
+router.get('/', async (req, res) => {
+  try {
+    const tests = await Lab.find().sort({ createdAt: -1 });
+    res.json(tests);
+  } catch (err) {
+    console.error('Error fetching lab tests:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// GET lab tests by patient
-router.get('/patient/:patientId', labController.getLabTestsByPatient);
+// Create new lab test
+router.post('/', async (req, res) => {
+  try {
+    const labTest = new Lab(req.body);
+    const savedTest = await labTest.save();
+    res.status(201).json(savedTest);
+  } catch (err) {
+    console.error('Error creating lab test:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// GET lab test by ID
-router.get('/:id', labController.getLabTestById);
+// Update lab test
+router.put('/:id', async (req, res) => {
+  try {
+    const test = await Lab.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!test) {
+      return res.status(404).json({ error: 'Lab test not found' });
+    }
+    res.json(test);
+  } catch (err) {
+    console.error('Error updating lab test:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// POST create new lab test
-router.post('/', labController.createLabTest);
-
-// PUT update lab test
-router.put('/:id', labController.updateLabTest);
-
-// DELETE lab test
-router.delete('/:id', labController.deleteLabTest);
-
-// POST add test results
-router.post('/:id/add-results', labController.addTestResults);
+// Delete lab test
+router.delete('/:id', async (req, res) => {
+  try {
+    const test = await Lab.findByIdAndDelete(req.params.id);
+    if (!test) {
+      return res.status(404).json({ error: 'Lab test not found' });
+    }
+    res.json({ message: 'Lab test deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting lab test:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router; 
