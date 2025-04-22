@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import './Lab.css';
+
+// Register ChartJS components
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 const Lab = () => {
   const [tests, setTests] = useState([]);
@@ -30,10 +35,73 @@ const Lab = () => {
     "Ultrasound"
   ];
 
+  // Add chart data states
+  const [testDistribution, setTestDistribution] = useState({
+    labels: [],
+    datasets: [{
+      label: 'Number of Tests',
+      data: [],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(153, 102, 255, 0.6)',
+        'rgba(255, 159, 64, 0.6)',
+      ],
+    }]
+  });
+
+  const [statusDistribution, setStatusDistribution] = useState({
+    labels: ['Pending', 'Completed', 'Cancelled'],
+    datasets: [{
+      data: [0, 0, 0],
+      backgroundColor: [
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(255, 99, 132, 0.6)',
+      ],
+    }]
+  });
+
   useEffect(() => {
     fetchTests();
     fetchPatients();
   }, []);
+
+  // Update chart data when tests change
+  useEffect(() => {
+    if (tests.length > 0) {
+      // Calculate test distribution
+      const testCounts = {};
+      tests.forEach(test => {
+        testCounts[test.testName] = (testCounts[test.testName] || 0) + 1;
+      });
+
+      setTestDistribution({
+        labels: Object.keys(testCounts),
+        datasets: [{
+          ...testDistribution.datasets[0],
+          data: Object.values(testCounts)
+        }]
+      });
+
+      // Calculate status distribution
+      const statusCounts = {
+        'pending': tests.filter(t => t.status === 'pending').length,
+        'completed': tests.filter(t => t.status === 'completed').length,
+        'cancelled': tests.filter(t => t.status === 'cancelled').length
+      };
+
+      setStatusDistribution({
+        ...statusDistribution,
+        datasets: [{
+          ...statusDistribution.datasets[0],
+          data: Object.values(statusCounts)
+        }]
+      });
+    }
+  }, [tests]);
 
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -250,6 +318,75 @@ const Lab = () => {
           </button>
         </div>
       </form>
+
+      <div className="visualization-container">
+        <div className="chart-container">
+          <h3>Test Distribution</h3>
+          <Bar
+            data={testDistribution}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                    precision: 0
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    boxWidth: 12,
+                    font: {
+                      size: 10
+                    }
+                  }
+                },
+                title: {
+                  display: true,
+                  text: 'Number of Tests by Type',
+                  font: {
+                    size: 12
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      return context.raw.toFixed(0);
+                    }
+                  }
+                }
+              }
+            }}
+          />
+        </div>
+
+        <div className="chart-container">
+          <h3>Test Status</h3>
+          <Pie
+            data={statusDistribution}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    boxWidth: 12,
+                    font: {
+                      size: 10
+                    }
+                  }
+                }
+              }
+            }}
+          />
+        </div>
+      </div>
 
       <div className="lab-tests">
         {loading ? (

@@ -79,25 +79,28 @@
   margin-bottom: 2rem;
 }
 
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
 .chart-container {
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-/* New styles for half-width charts */
-.charts-row {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .half-width {
-  flex: 1;
-  min-width: 0; /* Needed for flexbox to respect width constraints */
+  width: 100%;
+  height: 100%;
 }
 
 .chart-header {
@@ -438,7 +441,7 @@
   }
   
   .charts-row {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
   
   .half-width {
@@ -473,7 +476,7 @@
 }
 
 /* Styles for All Patients section */
-.all-patients-section {
+/* .all-patients-section {
   margin-top: 2rem;
   background: white;
   border-radius: 16px;
@@ -559,7 +562,7 @@
   .all-patients-section {
     padding: 1rem;
   }
-}
+} */
 
 .dashboard-container {
   padding: 20px;
@@ -936,7 +939,19 @@
   color: #c53030;
 }
 
-.status-badge.resigned {
-  background-color: #e2e8f0;
-  color: #4a5568;
+.staff-distribution-chart .recharts-bar {
+  transition: all 0.3s ease;
+}
+
+.staff-distribution-chart .recharts-bar:hover {
+  opacity: 0.8;
+}
+
+.staff-distribution-chart .recharts-cartesian-grid line {
+  stroke: #e2e8f0;
+}
+
+.staff-distribution-chart .recharts-cartesian-axis-tick-value {
+  font-size: 12px;
+  fill: #4a5568;
 } 
