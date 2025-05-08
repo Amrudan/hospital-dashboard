@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [doctorsBySpecialization, setDoctorsBySpecialization] = useState({});
   const [selectedSpecialization, setSelectedSpecialization] = useState(null);
+  const [staffDistributionData, setStaffDistributionData] = useState([]);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -131,6 +132,10 @@ const Dashboard = () => {
       setDoctorsBySpecialization(groupedDoctors);
       setSelectedSpecialization(Object.keys(groupedDoctors)[0]);
       
+      // Process staff data for the chart
+      const staffDistributionData = processStaffData(staff);
+      setStaffDistributionData(staffDistributionData);
+      
       setPatientsLoading(false);
       setLoading(false);
     } catch (error) {
@@ -216,6 +221,19 @@ const Dashboard = () => {
     );
   };
 
+  // Add this function to process staff data
+  const processStaffData = (staff) => {
+    const doctors = staff.filter(s => s.role === 'Doctor').length;
+    const nurses = staff.filter(s => s.role === 'Nurse').length;
+    const otherStaff = staff.filter(s => s.role !== 'Doctor' && s.role !== 'Nurse').length;
+
+    return [
+      { name: 'Doctors', value: doctors, color: '#4299e1' },
+      { name: 'Nurses', value: nurses, color: '#48bb78' },
+      { name: 'Other Staff', value: otherStaff, color: '#ed8936' }
+    ];
+  };
+
   return (
     <div className="dashboard">
       
@@ -249,39 +267,151 @@ const Dashboard = () => {
       
       {/* Charts */}
       <div className="dashboard-charts">
+        {/* First row of charts */}
         <div className="charts-row">
-          {/* Patient Visits Chart */}
-          <div className="chart-container half-width animate-in" style={{animationDelay: '0.1s'}}>
+          <div className="chart-container half-width animate-in" style={{animationDelay: '0.2s'}}>
             <div className="chart-header">
-              <h3>Patient Visits</h3>
-              <div className="chart-tabs">
-                <button 
-                  className={`chart-tab ${activeTab === 'day' ? 'active' : ''}`}
-                  onClick={() => updateTimeRange('day')}
-                >
-                  Day
-                </button>
-                <button 
-                  className={`chart-tab ${activeTab === 'week' ? 'active' : ''}`}
-                  onClick={() => updateTimeRange('week')}
-                >
-                  Week
-                </button>
-                <button 
-                  className={`chart-tab ${activeTab === 'month' ? 'active' : ''}`}
-                  onClick={() => updateTimeRange('month')}
-                >
-                  Month
-                </button>
-                <button 
-                  className={`chart-tab ${activeTab === 'year' ? 'active' : ''}`}
-                  onClick={() => updateTimeRange('year')}
-                >
-                  Year
-                </button>
+              <h3>Ward Occupancy</h3>
+            </div>
+            <div className="chart-content ward-occupancy-chart">
+              {loading ? (
+                <div className="chart-loading">
+                  <div className="chart-loader"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={wardOccupancyData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomizedLabel}
+                      outerRadius={120}
+                      innerRadius={60}
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      dataKey="value"
+                      animationDuration={1500}
+                      animationBegin={200}
+                    >
+                      {wardOccupancyData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color} 
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value) => [`${value} beds`, null]}
+                      contentStyle={{
+                        background: 'white',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                      }}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36} 
+                      iconType="circle" 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              <div className="chart-summary">
+                <div className="summary-item">
+                  <h4>Total Beds</h4>
+                  <p>{wardOccupancyData.reduce((sum, item) => sum + item.value, 0)}</p>
+                </div>
+                <div className="summary-item">
+                  <h4>Occupancy Rate</h4>
+                  <p>
+                    {wardOccupancyData.length ? 
+                      `${Math.round((wardOccupancyData[1]?.value / wardOccupancyData.reduce((sum, item) => sum + item.value, 0)) * 100)}%` 
+                      : '0%'}
+                  </p>
+                </div>
               </div>
             </div>
-            
+          </div>
+
+          <div className="chart-container half-width animate-in" style={{animationDelay: '0.3s'}}>
+            <div className="chart-header">
+              <h3>Patient Admissions</h3>
+            </div>
+            <div className="chart-content">
+              {loading ? (
+                <div className="chart-loading">
+                  <div className="chart-loader"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart
+                    data={[
+                      { date: '01', admissions: 12 },
+                      { date: '05', admissions: 19 },
+                      { date: '10', admissions: 15 },
+                      { date: '15', admissions: 22 },
+                      { date: '20', admissions: 17 },
+                      { date: '25', admissions: 24 },
+                      { date: '30', admissions: 18 },
+                    ]}
+                    margin={{
+                      top: 10,
+                      right: 30,
+                      left: 0,
+                      bottom: 0,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF2F7" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{fontSize: 12}} 
+                      axisLine={{stroke: '#CBD5E0'}}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{fontSize: 12}} 
+                      axisLine={false}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'white',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="admissions" 
+                      name="Daily Admissions"
+                      stroke="#5B86E5" 
+                      fill="url(#colorAdmissions)" 
+                      activeDot={{ r: 6 }}
+                    />
+                    <defs>
+                      <linearGradient id="colorAdmissions" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#5B86E5" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#36D1DC" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Second row of charts */}
+        <div className="charts-row">
+          <div className="chart-container half-width animate-in" style={{animationDelay: '0.4s'}}>
+            <div className="chart-header">
+              <h3>Lab Tests</h3>
+            </div>
             <div className="chart-content">
               {loading ? (
                 <div className="chart-loading">
@@ -345,44 +475,32 @@ const Dashboard = () => {
               )}
             </div>
           </div>
-          
-          {/* Ward Occupancy Chart */}
-          <div className="chart-container half-width animate-in" style={{animationDelay: '0.2s'}}>
+
+          <div className="chart-container half-width animate-in" style={{animationDelay: '0.5s'}}>
             <div className="chart-header">
-              <h3>Ward Occupancy</h3>
+              <h3>Staff Distribution</h3>
             </div>
-            
             <div className="chart-content">
               {loading ? (
                 <div className="chart-loading">
                   <div className="chart-loader"></div>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={wardOccupancyData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={120}
-                      innerRadius={60}
-                      fill="#8884d8"
-                      paddingAngle={2}
-                      dataKey="value"
-                      animationDuration={1500}
-                      animationBegin={200}
-                    >
-                      {wardOccupancyData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.color} 
-                        />
-                      ))}
-                    </Pie>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={staffDistributionData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
                     <Tooltip 
-                      formatter={(value) => [`${value} beds`, null]}
+                      formatter={(value) => [`${value} staff members`, null]}
                       contentStyle={{
                         background: 'white',
                         border: '1px solid #E2E8F0',
@@ -390,106 +508,26 @@ const Dashboard = () => {
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
                       }}
                     />
-                    <Legend 
-                      verticalAlign="bottom" 
-                      height={36} 
-                      iconType="circle" 
-                    />
-                  </PieChart>
+                    <Bar 
+                      dataKey="value" 
+                      fill="#4299e1"
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {staffDistributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               )}
-              <div className="chart-summary">
-                <div className="summary-item">
-                  <h4>Total Beds</h4>
-                  <p>{wardOccupancyData.reduce((sum, item) => sum + item.value, 0)}</p>
-                </div>
-                <div className="summary-item">
-                  <h4>Occupancy Rate</h4>
-                  <p>
-                    {wardOccupancyData.length ? 
-                      `${Math.round((wardOccupancyData[1]?.value / wardOccupancyData.reduce((sum, item) => sum + item.value, 0)) * 100)}%` 
-                      : '0%'}
-                  </p>
-                </div>
-              </div>
             </div>
-          </div>
-        </div>
-        
-        <div className="chart-container animate-in" style={{animationDelay: '0.3s'}}>
-          <div className="chart-header">
-            <h3>Monthly Patient Trends</h3>
-          </div>
-          
-          <div className="chart-content">
-            {loading ? (
-              <div className="chart-loading">
-                <div className="chart-loader"></div>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart
-                  data={[
-                    { date: '01', admissions: 12 },
-                    { date: '05', admissions: 19 },
-                    { date: '10', admissions: 15 },
-                    { date: '15', admissions: 22 },
-                    { date: '20', admissions: 17 },
-                    { date: '25', admissions: 24 },
-                    { date: '30', admissions: 18 },
-                  ]}
-                  margin={{
-                    top: 10,
-                    right: 30,
-                    left: 0,
-                    bottom: 0,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF2F7" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{fontSize: 12}} 
-                    axisLine={{stroke: '#CBD5E0'}}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    tick={{fontSize: 12}} 
-                    axisLine={false}
-                    tickLine={false}
-                    width={40}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'white',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="admissions" 
-                    name="Daily Admissions"
-                    stroke="#5B86E5" 
-                    fill="url(#colorAdmissions)" 
-                    activeDot={{ r: 6 }}
-                  />
-                  <defs>
-                    <linearGradient id="colorAdmissions" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#5B86E5" stopOpacity={0.8} />
-                      <stop offset="100%" stopColor="#36D1DC" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
           </div>
         </div>
       </div>
       
       {/* Tables Section */}
       <div className="dashboard-tables">
-        <div className="table-section animate-in" style={{animationDelay: '0.4s'}}>
+        <div className="table-section animate-in" style={{animationDelay: '0.6s'}}>
           <h3>Recent Patients</h3>
           <table className="data-table">
             <thead>
@@ -527,7 +565,7 @@ const Dashboard = () => {
           </table>
         </div>
         
-        <div className="table-section animate-in" style={{animationDelay: '0.5s'}}>
+        <div className="table-section animate-in" style={{animationDelay: '0.7s'}}>
           <h3>Staff on Duty(Doctors)</h3>
           <table className="data-table">
             <thead>
@@ -604,53 +642,6 @@ const Dashboard = () => {
             )}
           </div>
         )}
-      </div>
-      
-      {/* All Patients Table */}
-      <div className="all-patients-section animate-in" style={{animationDelay: '0.6s'}}>
-        <h3>All Patients</h3>
-        <div className="table-container">
-          <table className="data-table full-width">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Gender</th>
-                <th>Contact</th>
-                <th>Patient Type</th>
-                <th>Status</th>
-                <th>Registration Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patientsLoading ? (
-                <tr>
-                  <td colSpan="7" className="loading-cell">Loading patients...</td>
-                </tr>
-              ) : allPatients.length > 0 ? (
-                allPatients.map(patient => (
-                  <tr key={patient._id}>
-                    <td>{patient.name}</td>
-                    <td>{patient.age}</td>
-                    <td>{patient.gender}</td>
-                    <td>{patient.contactNumber || 'N/A'}</td>
-                    <td>{patient.patientType || 'Outpatient'}</td>
-                    <td>
-                      <span className={`status-badge status-${(patient.status || 'registered').toLowerCase()}`}>
-                        {patient.status || 'Registered'}
-                      </span>
-                    </td>
-                    <td>{new Date(patient.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="empty-cell">No patients in the system</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   );

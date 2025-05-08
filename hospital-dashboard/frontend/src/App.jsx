@@ -1,5 +1,5 @@
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect, Component } from 'react';
 import Login from './pages/Login';
 import PatientDashboard from './pages/PatientDashboard';
 import Dashboard from './pages/Dashboard';
@@ -10,10 +10,15 @@ import Lab from './pages/Lab';
 import Pharmacy from './pages/Pharmacy';
 import Invoice from './pages/Invoice';
 import AdminLayout from './components/AdminLayout';
+import AdminLogin from './pages/AdminLogin';
+import PatientLogin from './pages/PatientLogin';
+import PatientSignup from './pages/PatientSignup';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminSignup from './pages/AdminSignup';
 import './App.css';
 
 // Error Boundary to catch rendering errors
-class ErrorBoundary extends Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
@@ -84,15 +89,14 @@ function App() {
     <ErrorBoundary>
       <div className="app">
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Navigate to="/patient-login" />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/patient-login" element={<PatientLogin />} />
+          <Route path="/patient-signup" element={<PatientSignup />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
           
           {/* Admin Routes in correct order */}
-          <Route path="/admin-dashboard" element={
-            <AdminLayout>
-              <Dashboard />
-            </AdminLayout>
-          } />
           <Route path="/patients" element={
             <AdminLayout>
               <Patients />
@@ -123,6 +127,10 @@ function App() {
               <Invoice />
             </AdminLayout>
           } />
+          
+          <Route path="/admin-signup" element={<AdminSignup />} />
+          
+          <Route path="/dashboard" element={<Dashboard />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

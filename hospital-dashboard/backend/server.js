@@ -21,6 +21,7 @@ const labRoutes = require('./routes/lab');
 // const labRoutes = require('./routes/labs');
 const pharmacyRoutes = require('./routes/pharmacy');
 const invoiceRoutes = require('./routes/invoices');
+const authRoutes = require('./routes/auth');
 app.use('/api/patient', require('./routes/patient'));
 
 app.use('/api/patients', patientRoutes);
@@ -30,6 +31,7 @@ app.use('/api/labs', labRoutes);
 app.use('/api/lab', labRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/auth', authRoutes);
 
 // Root route for API check
 app.get('/api', (req, res) => {
@@ -46,4 +48,10 @@ mongoose.connect(process.env.MONGODB_URI)
   })
   .catch((error) => {
     console.error('Error connecting to MongoDB:', error.message);
-  }); 
+  });
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+}); 
