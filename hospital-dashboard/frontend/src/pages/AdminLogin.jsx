@@ -38,7 +38,7 @@ const AdminLogin = () => {
           phoneNumber: formData.phoneNumber
         }));
         // Redirect to your existing dashboard
-        navigate('/ward'); // Changed from /admin-dashboard to /dashboard
+        navigate('/admin-dashboard'); // Changed from /admin-dashboard to /dashboard
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -88,6 +88,11 @@ const AdminLogin = () => {
             </Link>
           </p>
         </form>
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <Link to="/patient-login" className="link-button">
+            Go to Patient Login
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -32,8 +32,22 @@ const PatientLogin = () => {
       });
 
       if (response.data.token) {
+        // Store the token
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Store the user data
+        const userData = response.data.user;
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Store the patient ID specifically
+        if (userData._id) {
+          localStorage.setItem('patientId', userData._id);
+        }
+
+        // Set the authorization header for future requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        
+        // Navigate to dashboard
         navigate('/patient-dashboard');
       }
     } catch (err) {

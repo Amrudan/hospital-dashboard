@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { FaCalendarAlt, FaUserMd, FaHistory, FaUserCircle } from 'react-icons/fa';
 import './PatientDashboard.css';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('appointments');
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [appointmentForm, setAppointmentForm] = useState({
     doctor: '',
     date: '',
@@ -19,23 +23,22 @@ const PatientDashboard = () => {
     { time: '04:00 PM', status: 'available' }
   ];
 
-  const doctors = [
-    {
-      id: 'dr_smith',
-      name: 'Dr. Smith',
-      specialization: 'Cardiology'
-    },
-    {
-      id: 'dr_johnson',
-      name: 'Dr. Johnson',
-      specialization: 'Neurology'
-    },
-    {
-      id: 'dr_williams',
-      name: 'Dr. Williams',
-      specialization: 'Pediatrics'
-    }
-  ];
+  // Fetch doctors from staff API
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/staff');
+        const doctorsList = response.data.filter(staff => staff.role === 'Doctor');
+        setDoctors(doctorsList);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
 
   const handleAppointmentSubmit = async (e) => {
     e.preventDefault();
@@ -85,18 +88,21 @@ const PatientDashboard = () => {
             className={activeTab === 'appointments' ? 'active' : ''}
             onClick={() => setActiveTab('appointments')}
           >
+            <FaCalendarAlt className="sidebar-icon" />
             Book Appointment
           </button>
           <button
             className={activeTab === 'history' ? 'active' : ''}
             onClick={() => setActiveTab('history')}
           >
+            <FaHistory className="sidebar-icon" />
             Appointment History
           </button>
           <button
             className={activeTab === 'profile' ? 'active' : ''}
             onClick={() => setActiveTab('profile')}
           >
+            <FaUserCircle className="sidebar-icon" />
             My Profile
           </button>
         </div>
@@ -107,24 +113,32 @@ const PatientDashboard = () => {
               <h3>Book an Appointment</h3>
               <form onSubmit={handleAppointmentSubmit}>
                 <div className="form-group">
-                  <label>Select Doctor</label>
+                  <label>
+                    <FaUserMd className="form-icon" />
+                    Select Doctor
+                  </label>
                   <select
                     name="doctor"
                     value={appointmentForm.doctor}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   >
                     <option value="">Select a doctor</option>
                     {doctors.map((doctor) => (
-                      <option key={doctor.id} value={doctor.id}>
-                        {doctor.name} - {doctor.specialization}
+                      <option key={doctor._id} value={doctor._id}>
+                        Dr. {doctor.name} - {doctor.specialization || 'General Medicine'}
                       </option>
                     ))}
                   </select>
+                  {loading && <div className="loading-text">Loading doctors...</div>}
                 </div>
 
                 <div className="form-group">
-                  <label>Select Date</label>
+                  <label>
+                    <FaCalendarAlt className="form-icon" />
+                    Select Date
+                  </label>
                   <input
                     type="date"
                     name="date"
@@ -178,14 +192,18 @@ const PatientDashboard = () => {
           {activeTab === 'history' && (
             <div className="appointment-history">
               <h3>Appointment History</h3>
-              <p>No previous appointments found.</p>
+              <div className="history-content">
+                <p>No previous appointments found.</p>
+              </div>
             </div>
           )}
 
           {activeTab === 'profile' && (
             <div className="patient-profile">
               <h3>My Profile</h3>
-              <p>Profile information will be available soon.</p>
+              <div className="profile-content">
+                <p>Profile information will be available soon.</p>
+              </div>
             </div>
           )}
         </div>
@@ -194,4 +212,4 @@ const PatientDashboard = () => {
   );
 };
 
-export default PatientDashboard; 
+export default PatientDashboard;

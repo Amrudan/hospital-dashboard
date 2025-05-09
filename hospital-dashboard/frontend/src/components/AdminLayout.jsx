@@ -27,12 +27,12 @@ const AdminLayout = ({ children }) => {
       <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <h2>Hospital Admin</h2>
-          <button 
+          {/* <button 
             className="toggle-sidebar"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
             {isSidebarOpen ? '◀' : '▶'}
-          </button>
+          </button> */}
         </div>
         <nav className="sidebar-nav">
           {menuItems.map((item) => (
@@ -49,20 +49,6 @@ const AdminLayout = ({ children }) => {
       </div>
 
       <div className="main-content">
-        <header className="admin-header">
-          <div className="header-left">
-            <h1>{menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}</h1>
-          </div>
-          <div className="header-right">
-            <div className="user-info">
-              <span className="user-name">Admin User</span>
-              <button className="logout-button" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          </div>
-        </header>
-
         <main className="content-area">
           {children}
         </main>

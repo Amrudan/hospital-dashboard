@@ -1,6 +1,8 @@
 /* Dashboard Styles with Animations */
 .dashboard {
   padding: 2rem;
+  background-color: #f8fafc;
+  min-height: 100vh;
   width: 100%;
 }
 
@@ -954,4 +956,44 @@
 .staff-distribution-chart .recharts-cartesian-axis-tick-value {
   font-size: 12px;
   fill: #4a5568;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dashboard-header h2 {
+  color: #1a2980;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: #ff3333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 77, 77, 0.2);
+}
+
+.logout-button svg {
+  font-size: 1.1rem;
 }
