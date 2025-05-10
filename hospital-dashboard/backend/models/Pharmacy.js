@@ -30,6 +30,10 @@ const pharmacySchema = new mongoose.Schema({
     ref: 'Patient',
     required: true
   },
+  patientName: {
+    type: String,
+    required: true
+  },
   prescribedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Staff',

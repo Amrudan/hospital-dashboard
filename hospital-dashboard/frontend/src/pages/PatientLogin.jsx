@@ -98,12 +98,12 @@ const PatientLogin = () => {
               Sign up here
             </Link>
           </p>
-          <p className="switch-form">
-            <Link to="/admin-login" className="link-button">
-              Switch to Admin Login
-            </Link>
-          </p>
         </form>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <Link to="/admin-login" className="link-button">
+            Go to Admin Login
+          </Link>
+        </div>
       </div>
     </div>
   );

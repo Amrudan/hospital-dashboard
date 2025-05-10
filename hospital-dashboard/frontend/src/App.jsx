@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+// import PatientLogin from './components/PatientLayout';
 import PatientDashboard from './pages/PatientDashboard';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
@@ -16,6 +17,8 @@ import PatientSignup from './pages/PatientSignup';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSignup from './pages/AdminSignup';
 import './App.css';
+import PatientLayout from './components/PatientLayout';
+import PatientProfile from './pages/PatientProfile';
 
 // Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component {
@@ -94,7 +97,10 @@ function App() {
           <Route path="/patient-login" element={<PatientLogin />} />
           <Route path="/patient-signup" element={<PatientSignup />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/patient-dashboard" element={<PatientDashboard />} />
+          <Route path="/patient-dashboard/*" element={<PatientLayout />}>
+            <Route index element={<PatientDashboard />} />
+            <Route path="profile" element={<PatientProfile />} />
+          </Route>
           
           {/* Admin Routes in correct order */}
           <Route path="/patients" element={
