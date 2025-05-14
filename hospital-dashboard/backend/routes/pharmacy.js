@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pharmacyController = require('../controllers/pharmacyController');
+const supplyController = require('../controllers/supplyController');
 
 // GET all prescriptions
 router.get('/', pharmacyController.getAllPrescriptions);
@@ -22,5 +23,10 @@ router.delete('/:id', pharmacyController.deletePrescription);
 
 // POST dispense medication
 router.post('/:id/dispense', pharmacyController.dispenseMedication);
+
+// SUPPLIES ROUTES
+router.get('/supplies', supplyController.getAllSupplies);
+router.post('/supplies', supplyController.addSupply);
+router.delete('/supplies/:id', supplyController.deleteSupply);
 
 module.exports = router; 

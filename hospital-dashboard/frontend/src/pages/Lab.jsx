@@ -266,7 +266,7 @@ const Lab = () => {
       <div className="search-container" style={{ position: 'relative' }}>
         <input
           type="text"
-          placeholder="Search by patient name..."
+          placeholder="Search by Patient Name..."
           value={searchTerm}
           onChange={handleSearch}
           className="search-input"

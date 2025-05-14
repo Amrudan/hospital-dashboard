@@ -396,13 +396,15 @@ const Staff = () => {
       {showStaffList && (
         <div className="staff-list-container">
           <div className="filter-container">
-            <input
-              type="text"
-              placeholder="Search staff..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="search-input"
-            />
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Search Staff..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="search-input"
+              />
+            </div>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
@@ -416,7 +418,7 @@ const Staff = () => {
               <option value="Pharmacist">Pharmacists</option>
               <option value="Receptionist">Receptionists</option>
             </select>
-      </div>
+          </div>
 
           {loading ? (
             <p>Loading staff data...</p>

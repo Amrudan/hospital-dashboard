@@ -727,7 +727,7 @@ const Patients = () => {
           <div className="search-container">
             <input
               type="text"
-              placeholder="Search patients..."
+              placeholder="Search Patients..."
               value={searchTerm}
               onChange={handleSearch}
               className="search-input"

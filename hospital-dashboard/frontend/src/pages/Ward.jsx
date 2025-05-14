@@ -451,14 +451,9 @@ const Ward = () => {
             type="text" 
             value={searchQuery}
             onChange={handleSearchInputChange}
+            className="search-input"
+            placeholder="Search by Ward Number or type..."
           />
-          <button 
-            className="search-btn"
-            onClick={handleSearch}
-          >
-            Search
-          </button>
-          
           {filteredWards.length > 0 && (
             <div className="search-results">
               <h4>Search Results ({filteredWards.length})</h4>

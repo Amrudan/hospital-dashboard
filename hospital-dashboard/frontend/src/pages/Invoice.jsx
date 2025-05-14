@@ -659,7 +659,7 @@ const Invoice = () => {
   return (
     <div className="invoice-container">
       <div className="invoice-header">
-        <h1>Invoice Management</h1>
+        {/* <h1>Invoice Management</h1> */}
         <div className="header-actions">
           <div className="search-box">
             <input 
@@ -668,7 +668,6 @@ const Invoice = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <FaSearch className="search-icon" />
           </div>
           <button 
             className="report-btn" 

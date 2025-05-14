@@ -83,6 +83,17 @@ const Pharmacy = () => {
     }]
   });
 
+  const [topMedicinesData, setTopMedicinesData] = useState({
+    labels: [],
+    datasets: [{
+      label: 'Prescribed Count',
+      data: [],
+      backgroundColor: 'rgba(255, 159, 64, 0.5)',
+      borderColor: 'rgba(255, 159, 64, 1)',
+      borderWidth: 1
+    }]
+  });
+
   // Medication catalog with detailed information
   const medicationCatalog = [
     { name: 'Paracetamol', price: 5, category: 'Pain Relief' },
@@ -118,7 +129,8 @@ const Pharmacy = () => {
     category: '',
     quantity: '',
     price: '',
-    unit: ''
+    unit: '',
+    soldTo: ''
   });
 
   const [selectedPrescription, setSelectedPrescription] = useState(null);
@@ -250,6 +262,18 @@ const Pharmacy = () => {
       .slice(0, 5);
 
     setExperiencedMedicines(experiencedMedsData);
+
+    // New: Top Medicines Bar Chart
+    setTopMedicinesData({
+      labels: experiencedMedsData.map(med => med.name),
+      datasets: [{
+        label: 'Prescribed Count',
+        data: experiencedMedsData.map(med => med.count),
+        backgroundColor: 'rgba(255, 159, 64, 0.5)',
+        borderColor: 'rgba(255, 159, 64, 1)',
+        borderWidth: 1
+      }]
+    });
   };
 
   useEffect(() => {
@@ -528,35 +552,28 @@ const Pharmacy = () => {
   const handleAddSupply = async (e) => {
     e.preventDefault();
     try {
-      // Validate required fields
       if (!supplyForm.name || !supplyForm.quantity) {
         alert('Please fill in all required fields');
         return;
       }
-
-      // Prepare supply data
       const supplyData = {
         name: supplyForm.name,
         category: supplyForm.category,
         quantity: parseInt(supplyForm.quantity),
         unit: supplyForm.unit,
-        price: parseFloat(supplyForm.price)
+        price: parseFloat(supplyForm.price),
+        soldTo: supplyForm.soldTo || null
       };
-
-      // Send to backend
       const response = await axios.post('http://localhost:5000/api/pharmacy/supplies', supplyData);
-
       if (response.data) {
-        // Update the medical supplies list immediately
         setMedicalSupplies(prevSupplies => [response.data, ...prevSupplies]);
-
-        // Reset form and close modal
         setSupplyForm({
           name: '',
           category: '',
           quantity: '',
           price: '',
-          unit: ''
+          unit: '',
+          soldTo: ''
         });
         setShowAddSupply(false);
         alert('Supply added successfully!');
@@ -676,8 +693,8 @@ const Pharmacy = () => {
 
   return (
     <div className="pharmacy-container">
-      <div className="pharmacy-header">
-        <h2>Pharmacy Management</h2>
+      {/* Centered Search Bar */}
+      <div className="pharmacy-search-center">
         <div className="search-box">
           <input
             type="text"
@@ -692,6 +709,8 @@ const Pharmacy = () => {
             </span>
           )}
         </div>
+      </div>
+      <div className="pharmacy-header-actions">
         <div className="action-buttons">
           <button className="add-button" onClick={handleAddPrescriptionClick}>
             Add Prescription
@@ -701,52 +720,41 @@ const Pharmacy = () => {
           </button>
         </div>
       </div>
-
       {/* Charts Section */}
-      <div className="charts-section">
-        <div className="chart-card">
-          <h3>Patient Prescription Distribution</h3>
+      <div className="charts-section pharmacy-charts-grid">
+        <div className="chart-card pharmacy-chart-card">
+          <h3>Top Medicines Prescribed</h3>
           <Bar
-            data={stockData}
+            data={topMedicinesData}
             options={{
               responsive: true,
               plugins: {
-                legend: {
-                  position: 'top',
-                },
+                legend: { display: false },
                 title: {
                   display: true,
-                  text: 'Top Patients by Prescription Count'
+                  text: 'Top 5 Medicines by Prescriptions'
                 }
               },
               scales: {
                 y: {
                   beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: 'Number of Prescriptions'
-                  }
+                  title: { display: true, text: 'Count' }
                 },
                 x: {
-                  title: {
-                    display: true,
-                    text: 'Patient Name'
-                  }
+                  title: { display: true, text: 'Medicine' }
                 }
               }
             }}
           />
         </div>
-        <div className="chart-card">
+        <div className="chart-card pharmacy-chart-card">
           <h3>Prescription Status Distribution</h3>
           <Pie
             data={categoryData}
             options={{
               responsive: true,
               plugins: {
-                legend: {
-                  position: 'right',
-                },
+                legend: { position: 'right' },
                 title: {
                   display: true,
                   text: 'Prescription Status Overview'
@@ -1281,6 +1289,19 @@ const Pharmacy = () => {
                 readOnly
               />
             </div>
+            <div className="form-group">
+              <label>Sold To (Patient)</label>
+              <select
+                className="select-dropdown"
+                value={supplyForm.soldTo}
+                onChange={e => setSupplyForm({ ...supplyForm, soldTo: e.target.value })}
+              >
+                <option value="">Select Patient (optional)</option>
+                {patients.map(patient => (
+                  <option key={patient._id} value={patient._id}>{patient.name}</option>
+                ))}
+              </select>
+            </div>
             <div className="modal-buttons">
               <button type="button" className="cancel-button" onClick={() => setShowAddSupply(false)}>
                 Cancel
@@ -1292,6 +1313,52 @@ const Pharmacy = () => {
           </form>
         </Modal.Body>
       </Modal>
+
+      {/* Medical Supplies Table */}
+      <div className="table-section">
+        <div className="section-header">
+          <h3>Medical Supplies List</h3>
+          <button className="add-button" onClick={() => setShowAddSupply(true)}>
+            Add Supply
+          </button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Price</th>
+              <th>Sold To</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {medicalSupplies.length === 0 ? (
+              <tr><td colSpan="7">No supplies found</td></tr>
+            ) : (
+              medicalSupplies.map(supply => (
+                <tr key={supply._id}>
+                  <td>{supply.name}</td>
+                  <td>{supply.category}</td>
+                  <td>{supply.quantity}</td>
+                  <td>{supply.unit}</td>
+                  <td>Rs.{supply.price}</td>
+                  <td>{
+                    supply.soldTo && typeof supply.soldTo === 'object' && supply.soldTo.name
+                      ? supply.soldTo.name
+                      : '-'
+                  }</td>
+                  <td>
+                    <button className="delete" onClick={() => handleDeleteSupply(supply._id)}>Delete</button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
