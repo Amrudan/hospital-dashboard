@@ -43,6 +43,7 @@ router.get('/patient', auth, async (req, res) => {
   try {
     const appointments = await Appointment.find({ patientId: req.user.id })
       .populate('doctorId', 'name')
+      .populate('patientId', 'name')
       .sort({ date: -1 });
     res.json(appointments);
   } catch (err) {
@@ -80,6 +81,25 @@ router.patch('/:id', auth, async (req, res) => {
     }
     
     res.json(appointment);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// Cancel (delete) an appointment by patient
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    // Only allow the patient who booked the appointment to delete it
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    if (appointment.patientId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to cancel this appointment' });
+    }
+    await appointment.deleteOne();
+    res.json({ message: 'Appointment cancelled successfully' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

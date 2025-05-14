@@ -4,6 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Use the same secret key as in auth middleware
+const JWT_SECRET = 'hms_2024_secure_jwt_secret_key_987654321';
+
 // Register new user (admin or patient)
 router.post('/register', async (req, res) => {
   try {
@@ -58,15 +61,15 @@ router.post('/login', async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
+      { user: { id: user._id, role: user.role } },
+      JWT_SECRET,
       { expiresIn: '1d' }
     );
 
     res.json({
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         phoneNumber: user.phoneNumber,
         role: user.role

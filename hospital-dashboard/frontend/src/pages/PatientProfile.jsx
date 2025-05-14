@@ -14,6 +14,20 @@ const PatientProfile = () => {
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
   const [appointmentsError, setAppointmentsError] = useState(null);
 
+  // Handler to cancel appointment
+  const handleCancelAppointment = async (appointmentId) => {
+    if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/appointments/${appointmentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAppointments(appointments.filter(a => a._id !== appointmentId));
+    } catch (err) {
+      alert('Failed to cancel appointment');
+    }
+  };
+
   useEffect(() => {
     const fetchAppointments = async () => {
       setAppointmentsLoading(true);
@@ -79,6 +93,11 @@ const PatientProfile = () => {
                         <div className="appointment-notification error">
                           Your appointment request was not accepted. Please try booking another time.
                         </div>
+                      )}
+                      {appointment.status !== 'cancelled' && (
+                        <button className="cancel-btn" onClick={() => handleCancelAppointment(appointment._id)}>
+                          Cancel
+                        </button>
                       )}
                     </div>
                   ))}

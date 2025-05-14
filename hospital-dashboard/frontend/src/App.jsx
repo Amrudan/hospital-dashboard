@@ -11,15 +11,16 @@ import Lab from './pages/Lab';
 import Pharmacy from './pages/Pharmacy';
 import Invoice from './pages/Invoice';
 import AdminLayout from './components/AdminLayout';
-import AdminLogin from './pages/AdminLogin';
+import AdminLogin from './pages/Adminlogin';
 import PatientLogin from './pages/PatientLogin';
 import PatientSignup from './pages/PatientSignup';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSignup from './pages/AdminSignup';
-// import DoctorAppointments from './pages/DoctorAppointments';
+import DoctorAppointments from './pages/DoctorAppointments';
 import './App.css';
 import PatientLayout from './components/PatientLayout';
 import PatientProfile from './pages/PatientProfile';
+import AdminProfile from './pages/AdminProfile';
 
 // Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component {
@@ -104,6 +105,11 @@ function App() {
           </Route>
           
           {/* Admin Routes in correct order */}
+          <Route path="/admin-profile" element={
+            <AdminLayout>
+              <AdminProfile />
+            </AdminLayout>
+          } />
           <Route path="/patients" element={
             <AdminLayout>
               <Patients />
@@ -134,15 +140,13 @@ function App() {
               <Invoice />
             </AdminLayout>
           } />
-          {/* <Route path="/appointments" element={
+          <Route path="/appointments" element={
             <AdminLayout>
               <DoctorAppointments />
             </AdminLayout>
-          } /> */}
+          } />
           
           <Route path="/admin-signup" element={<AdminSignup />} />
-          
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -151,4 +155,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

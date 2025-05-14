@@ -33,10 +33,7 @@ const AdminLogin = () => {
 
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify({
-          role: 'admin',
-          phoneNumber: formData.phoneNumber
-        }));
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         // Redirect to your existing dashboard
         navigate('/admin-dashboard'); // Changed from /admin-dashboard to /dashboard
       }
