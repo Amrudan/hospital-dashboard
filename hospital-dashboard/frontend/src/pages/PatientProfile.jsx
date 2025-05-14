@@ -44,25 +44,13 @@ const PatientProfile = () => {
       <div className="profile-content">
         {user ? (
           <>
+            <div className="profile-info">
             <p><strong>Name:</strong> {user.name}</p>
             <p><strong>Phone Number:</strong> {user.phoneNumber}</p>
-            <p>
-              <strong>Password:</strong>
-              {showPassword ? (
-                <span style={{ marginLeft: 8 }}>{storedPassword}</span>
-              ) : (
-                <span style={{ marginLeft: 8 }}>{'*'.repeat(storedPassword.length || 8)}</span>
-              )}
-              <button
-                style={{ marginLeft: 12 }}
-                onClick={() => setShowPassword((prev) => !prev)}
-                type="button"
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </p>
-            <h4 style={{ marginTop: '2rem' }}>Appointment History</h4>
-            <div className="history-content">
+            </div>
+
+            <div className="appointments-section">
+              <h4>My Appointments</h4>
               {appointmentsLoading ? (
                 <div className="loading-text">Loading appointments...</div>
               ) : appointmentsError ? (
@@ -73,18 +61,30 @@ const PatientProfile = () => {
                     <div key={appointment._id} className="appointment-card">
                       <div className="appointment-header">
                         <h4>Dr. {appointment.doctorId?.name || 'Unknown Doctor'}</h4>
-                        <span className={`status ${appointment.status?.toLowerCase()}`}>{appointment.status}</span>
+                        <span className={`status ${appointment.status}`}>
+                          {appointment.status}
+                        </span>
                       </div>
                       <div className="appointment-details">
                         <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
                         <p><strong>Time:</strong> {appointment.time}</p>
                         <p><strong>Reason:</strong> {appointment.reason}</p>
                       </div>
+                      {appointment.status === 'accepted' && (
+                        <div className="appointment-notification success">
+                          Your appointment has been accepted by the doctor!
+                        </div>
+                      )}
+                      {appointment.status === 'rejected' && (
+                        <div className="appointment-notification error">
+                          Your appointment request was not accepted. Please try booking another time.
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="no-appointments">No previous appointments found.</p>
+                <p className="no-appointments">No appointments found.</p>
               )}
             </div>
           </>

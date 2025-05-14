@@ -108,7 +108,7 @@ body {
   height: 100vh;
   background: linear-gradient(180deg, #56CCF2 0%, #2F80ED 100%);
   color: white;
-  position: fixed;
+  /* position: sticky; */
   left: 0;
   top: 0;
   padding: 1.5rem 0;

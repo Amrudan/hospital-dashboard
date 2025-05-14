@@ -156,20 +156,21 @@ const Ward = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const wardData = {
+        ...formData,
+        assignedStaff: formData.nurseInCharge ? [formData.nurseInCharge] : []
+      };
+
       if (selectedWard) {
         // Update ward
-        await axios.put(`http://localhost:5000/api/wards/${selectedWard._id}`, {
-          ...formData,
-          assignedStaff: [formData.nurseInCharge] // Assign the selected nurse
-        });
+        const response = await axios.put(`http://localhost:5000/api/wards/${selectedWard._id}`, wardData);
         toast.success('Ward updated successfully');
+        console.log('Updated ward response:', response.data); // Debug log
       } else {
         // Create new ward
-        await axios.post('http://localhost:5000/api/wards', {
-          ...formData,
-          assignedStaff: [formData.nurseInCharge] // Assign the selected nurse
-        });
+        const response = await axios.post('http://localhost:5000/api/wards', wardData);
         toast.success('Ward created successfully');
+        console.log('Created ward response:', response.data); // Debug log
       }
       setIsEditing(false);
       setSelectedWard(null);
@@ -187,8 +188,9 @@ const Ward = () => {
         nextMaintenance: '',
         specialNotes: ''
       });
-      fetchWards();
+      fetchWards(); // Refresh the list
     } catch (error) {
+      console.error('Error saving ward:', error);
       toast.error(error.response?.data?.message || 'An error occurred');
     }
   };
@@ -722,7 +724,7 @@ const Ward = () => {
                           <span>{ward.currentOccupancy}/{ward.capacity}</span>
                         </div>
                       </td>
-                      <td>{getNurseName(ward.nurseInCharge)}</td>
+                      <td>{ward.nurseInCharge}</td>
                       <td>
                         <span className={`status-badge ${ward.status?.toLowerCase()}`}>
                           {ward.status}
@@ -745,14 +747,6 @@ const Ward = () => {
                           disabled={loading}
                         >
                           ✖
-                        </button>
-                        <button 
-                          className="patients-btn" 
-                          onClick={() => togglePatientsList(ward._id)}
-                          title="View Patients"
-                          disabled={loading}
-                        >
-                          {showPatients[ward._id] ? '▲' : '▼'}
                         </button>
                       </td>
                     </tr>

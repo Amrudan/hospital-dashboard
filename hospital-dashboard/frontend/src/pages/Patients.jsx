@@ -121,18 +121,6 @@ const Patients = () => {
     bedNumber: ''
   });
 
-  // Government schemes list
-  const governmentSchemes = {
-    "Ayushman Bharat": "Covers up to ₹5 lakhs per family per year",
-    "CGHS": "Central Government Health Scheme for government employees",
-    "ESI": "Employees State Insurance for workers",
-    "PM-JAY": "Pradhan Mantri Jan Arogya Yojana for poor families",
-    "ECHS": "Ex-Servicemen Contributory Health Scheme",
-    "State Government": "State-specific health coverage",
-    "Railway": "Railway employees health scheme",
-    "Other": "Other government scheme"
-  };
-
   useEffect(() => {
     // Fetch all wards first, then patients
     const loadData = async () => {
@@ -278,12 +266,6 @@ const Patients = () => {
 
   const handleAdd = async () => {
     try {
-      // Validate form if patient is inpatient
-      if (formData.patientType === 'Inpatient' && (!formData.wardId || !formData.bedNumber)) {
-        showError('Please select a ward and bed number for inpatient');
-        return;
-      }
-
       // Make sure patientType is explicitly set
       const patientData = {
         ...formData,
@@ -349,12 +331,6 @@ const Patients = () => {
 
   const handleUpdate = async (id) => {
     try {
-      // Validate form if patient is inpatient
-      if (formData.patientType === 'Inpatient' && (!formData.wardId || !formData.bedNumber)) {
-        showError('Please select a ward and bed number for inpatient');
-        return;
-      }
-
       // Make sure patientType is explicitly set
       const patientData = {
         ...formData,
@@ -709,71 +685,6 @@ const Patients = () => {
             </div>
           </div>
 
-          {formData.patientType === 'Inpatient' && (
-            <div className="form-row bed-allocation">
-              <div className="form-group">
-                <label>Select Ward</label>
-                <select
-                  name="wardId"
-                  value={formData.wardId}
-                  onChange={handleInputChange}
-                  required={formData.patientType === 'Inpatient'}
-                >
-                  <option value="">-- Select Ward --</option>
-                  {availableWards.map(ward => {
-                    const availableBedCount = ward.capacity - ward.currentOccupancy;
-                    let availabilityClass = 'many';
-                    
-                    if (availableBedCount === 0) {
-                      availabilityClass = 'none';
-                    } else if (availableBedCount <= 2) {
-                      availabilityClass = 'few';
-                    }
-                    
-                    return (
-                      <option key={ward._id} value={ward._id}>
-                        {ward.wardNumber} - {ward.wardType} 
-                        {availableBedCount > 0 ? (
-                          <span> (Available: {availableBedCount} beds)</span>
-                        ) : (
-                          <span> (Full)</span>
-                        )}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              
-              <div className="form-group">
-                <label>Available Beds</label>
-                <select
-                  name="bedNumber"
-                  value={formData.bedNumber}
-                  onChange={handleInputChange}
-                  disabled={!formData.wardId || availableBeds.length === 0}
-                  required={formData.patientType === 'Inpatient'}
-                >
-                  <option value="">-- Select Bed --</option>
-                  {availableBeds.map(bed => (
-                    <option key={bed.id} value={bed.number}>
-                      Bed #{bed.number}
-                    </option>
-                  ))}
-                </select>
-                {formData.wardId && availableBeds.length === 0 && (
-                  <div className="no-beds-warning">
-                    No beds available in this ward
-                  </div>
-                )}
-                {!formData.wardId && (
-                  <div className="select-ward-first">
-                    Please select a ward first
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           <div className="form-actions">
             <button 
               type="button" 
@@ -834,7 +745,6 @@ const Patients = () => {
                   <th>Gender</th>
                   <th>Contact</th>
                   <th>Type</th>
-                  <th>Ward/Bed</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -842,7 +752,7 @@ const Patients = () => {
               <tbody>
                 {filteredPatients.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="no-data">No patients found</td>
+                    <td colSpan="8" className="no-data">No patients found</td>
                   </tr>
                 ) : (
                   filteredPatients.map(patient => (
@@ -855,51 +765,10 @@ const Patients = () => {
                       <td>{patient.gender}</td>
                       <td>{patient.contact && patient.contact.match(/^[0-9]{10}$/) ? patient.contact : '-'}</td>
                       <td>
-                        <span className={`patient-type-badge ${patient.patientType === 'Inpatient' ? 'inpatient' : 'outpatient'}`}>
-                          {patient.patientType === 'Inpatient' ? 'Inpatient' : 'Outpatient'}
-                        </span>
+                        <span className={`patient-type-badge ${patient.patientType === 'Inpatient' ? 'inpatient' : 'outpatient'}`}>{patient.patientType === 'Inpatient' ? 'Inpatient' : 'Outpatient'}</span>
                       </td>
                       <td>
-                        {patient.patientType === 'Inpatient' ? (
-                          <div className="ward-bed-display">
-                            {patient.wardId ? (
-                              <>
-                                <div className="ward-display">
-                                  <span className="info-label">Ward:</span> 
-                                  <span className="info-value">
-                                    {patient.wardNumber || 
-                                     (allWards.find(w => w._id === patient.wardId)?.wardNumber) || 
-                                     'Unknown'}
-                                  </span>
-                                </div>
-                                <div className="bed-display">
-                                  <span className="info-label">Bed:</span> 
-                                  <span className="info-value">
-                                    {patient.bedNumber ? (
-                                      isNaN(patient.bedNumber) ? patient.bedNumber : `#${patient.bedNumber}`
-                                    ) : (
-                                      'Not assigned'
-                                    )}
-                                  </span>
-                                </div>
-                                {(!patient.wardNumber && patient.wardId) && (
-                                  <div className="debug-info">
-                                    Ward ID: {patient.wardId.substring(0, 8)}...
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <span className="not-assigned">Not assigned</span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="not-applicable">N/A</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={`status-badge status-${patient.status?.toLowerCase()}`}>
-                          {patient.status}
-                        </span>
+                        <span className={`status-badge status-${patient.status?.toLowerCase()}`}>{patient.status}</span>
                       </td>
                       <td>
                         <div className="action-buttons">
@@ -915,8 +784,6 @@ const Patients = () => {
                               setEditingPatientId(patient._id);
                               setShowForm(true);
                               setShowExistingPatients(false);
-                              
-                              // If patient is inpatient and has a ward, fetch available beds
                               if (patient.patientType === 'Inpatient' && patient.wardId) {
                                 fetchAvailableBedsForWard(patient.wardId);
                               }
@@ -924,16 +791,6 @@ const Patients = () => {
                           >
                             Edit
                           </button>
-                          {/* Add Assign Bed button for inpatients with no assigned beds */}
-                          {patient.patientType === 'Inpatient' && 
-                           (!patient.bedNumber || !patient.wardId) && (
-                            <button 
-                              className="assign-bed-btn"
-                              onClick={() => handleAssignBed(patient)}
-                            >
-                              Assign Bed
-                            </button>
-                          )}
                           <button 
                             className="delete-btn"
                             onClick={() => {

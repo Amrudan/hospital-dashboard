@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { patientApi, staffApi, wardApi, labApi } from '../services/api';
 import AdminLayout from '../components/AdminLayout';
+import axios from 'axios';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,8 +21,6 @@ const Dashboard = () => {
 
   const [loading, setLoading] = useState(true);
   const [patientsLoading, setPatientsLoading] = useState(true);
-  const [chartData, setChartData] = useState([]);
-  const [activeTab, setActiveTab] = useState('week');
   const [allPatients, setAllPatients] = useState([]);
   const [recentPatients, setRecentPatients] = useState([]);
   const [wardOccupancyData, setWardOccupancyData] = useState([]);
@@ -31,10 +30,12 @@ const Dashboard = () => {
   const [doctorsBySpecialization, setDoctorsBySpecialization] = useState({});
   const [selectedSpecialization, setSelectedSpecialization] = useState(null);
   const [staffDistributionData, setStaffDistributionData] = useState([]);
+  const [labTestsData, setLabTestsData] = useState([]);
 
   // Fetch all data on component mount
   useEffect(() => {
     fetchAllData();
+    fetchLabTestsData();
   }, []);
 
   const fetchAllData = async () => {
@@ -104,9 +105,6 @@ const Dashboard = () => {
         shift: doctor.shift || 'Morning'
       })));
       
-      // Set chart data based on selected time range
-      updateTimeRange(activeTab);
-      
       // Fetch top doctors
       const topDoctorsResponse = await staffApi.getAllStaff();
       const topDoctorsData = topDoctorsResponse.data;
@@ -148,59 +146,23 @@ const Dashboard = () => {
     }
   };
 
-  const updateTimeRange = (range) => {
-    setActiveTab(range);
-    // In a real app, this would fetch different data based on the time range
-    let data = [];
-    
-    switch(range) {
-      case 'day':
-        data = [
-          { time: '8am', visits: 5 },
-          { time: '10am', visits: 7 },
-          { time: '12pm', visits: 21 },
-          { time: '2pm', visits: 15 },
-          { time: '4pm', visits: 5 },
-          { time: '6pm', visits: 2 },
-        ];
-        break;
-      case 'month':
-        data = [
-          { time: 'Week 1', visits: 28 },
-          { time: 'Week 2', visits: 32 },
-          { time: 'Week 3', visits: 30 },
-          { time: 'Week 4', visits: 35 },
-        ];
-        break;
-      case 'year':
-        data = [
-          { time: 'Jan', visits: 125 },
-          { time: 'Feb', visits: 110 },
-          { time: 'Mar', visits: 135 },
-          { time: 'Apr', visits: 120 },
-          { time: 'May', visits: 140 },
-          { time: 'Jun', visits: 150 },
-          { time: 'Jul', visits: 130 },
-          { time: 'Aug', visits: 145 },
-          { time: 'Sep', visits: 160 },
-          { time: 'Oct', visits: 155 },
-          { time: 'Nov', visits: 170 },
-          { time: 'Dec', visits: 180 },
-        ];
-        break;
-      default: // week
-        data = [
-          { name: 'Mon', visits: 14 },
-          { name: 'Tue', visits: 15 },
-          { name: 'Wed', visits: 19 },
-          { name: 'Thu', visits: 13 },
-          { name: 'Fri', visits: 18 },
-          { name: 'Sat', visits: 18 },
-          { name: 'Sun', visits: 12 },
-        ];
+  const fetchLabTestsData = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/lab');
+      // Group by date (assume testDate or createdAt)
+      const tests = res.data;
+      const grouped = {};
+      tests.forEach(test => {
+        const date = (test.testDate || test.createdAt || '').slice(0, 10);
+        if (!grouped[date]) grouped[date] = 0;
+        grouped[date]++;
+      });
+      // Convert to array for chart
+      const chartArr = Object.keys(grouped).sort().map(date => ({ date, count: grouped[date] }));
+      setLabTestsData(chartArr);
+    } catch (err) {
+      console.error('Error fetching lab tests data:', err);
     }
-    
-    setChartData(data);
   };
 
   // Custom label for pie chart
@@ -242,6 +204,12 @@ const Dashboard = () => {
     localStorage.removeItem('user');
     navigate('/admin-login');
   };
+
+  const patientTypeColors = ['#5B86E5', '#36D1DC'];
+  const patientTypeData = [
+    { name: 'Inpatient', value: allPatients.filter(p => p.patientType === 'Inpatient').length },
+    { name: 'Outpatient', value: allPatients.filter(p => p.patientType === 'Outpatient' || !p.patientType).length }
+  ];
 
   return (
     <AdminLayout>
@@ -354,7 +322,7 @@ const Dashboard = () => {
 
             <div className="chart-container half-width animate-in" style={{animationDelay: '0.3s'}}>
               <div className="chart-header">
-                <h3>Patient Admissions</h3>
+                <h3>Patient Type Distribution</h3>
               </div>
               <div className="chart-content">
                 {loading ? (
@@ -363,59 +331,23 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart
-                      data={[
-                        { date: '01', admissions: 12 },
-                        { date: '05', admissions: 19 },
-                        { date: '10', admissions: 15 },
-                        { date: '15', admissions: 22 },
-                        { date: '20', admissions: 17 },
-                        { date: '25', admissions: 24 },
-                        { date: '30', admissions: 18 },
-                      ]}
-                      margin={{
-                        top: 10,
-                        right: 30,
-                        left: 0,
-                        bottom: 0,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF2F7" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{fontSize: 12}} 
-                        axisLine={{stroke: '#CBD5E0'}}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        tick={{fontSize: 12}} 
-                        axisLine={false}
-                        tickLine={false}
-                        width={40}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'white',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
-                        }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="admissions" 
-                        name="Daily Admissions"
-                        stroke="#5B86E5" 
-                        fill="url(#colorAdmissions)" 
-                        activeDot={{ r: 6 }}
-                      />
-                      <defs>
-                        <linearGradient id="colorAdmissions" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#5B86E5" stopOpacity={0.8} />
-                          <stop offset="100%" stopColor="#36D1DC" stopOpacity={0.1} />
-                        </linearGradient>
-                      </defs>
-                    </AreaChart>
+                    <PieChart>
+                      <Pie
+                        data={patientTypeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={120}
+                        innerRadius={60}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {patientTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={patientTypeColors[index % patientTypeColors.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
                   </ResponsiveContainer>
                 )}
               </div>
@@ -435,53 +367,15 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={chartData}
-                      margin={{
-                        top: 10,
-                        right: 30,
-                        left: 20,
-                        bottom: 30,
-                      }}
-                    >
+                    <BarChart data={labTestsData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF2F7" />
-                      <XAxis 
-                        dataKey={activeTab === 'day' ? 'time' : activeTab === 'year' ? 'time' : activeTab === 'month' ? 'time' : 'name'} 
-                        tick={{fontSize: 12}} 
-                        axisLine={{stroke: '#CBD5E0'}}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        tick={{fontSize: 12}} 
-                        axisLine={false}
-                        tickLine={false}
-                        width={40}
-                      />
-                      <Tooltip 
-                        cursor={{fill: 'rgba(237, 242, 247, 0.5)'}}
-                        contentStyle={{
-                          background: 'white',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
-                        }}
-                      />
-                      <Legend 
-                        verticalAlign="top" 
-                        height={36} 
-                        iconType="circle" 
-                        wrapperStyle={{paddingTop: '10px'}}
-                      />
-                      <Bar 
-                        dataKey="visits" 
-                        name="Patient Visits" 
-                        fill="url(#colorVisits)" 
-                        barSize={activeTab === 'year' ? 20 : 30} 
-                        radius={[4, 4, 0, 0]}
-                        animationDuration={1500}
-                      />
+                      <XAxis dataKey="date" tick={{fontSize: 12}} axisLine={{stroke: '#CBD5E0'}} tickLine={false} />
+                      <YAxis tick={{fontSize: 12}} axisLine={false} tickLine={false} width={40} />
+                      <Tooltip cursor={{fill: 'rgba(237, 242, 247, 0.5)'}} contentStyle={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }} />
+                      <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{paddingTop: '10px'}} />
+                      <Bar dataKey="count" name="Lab Tests" fill="url(#colorLabTests)" barSize={30} radius={[4, 4, 0, 0]} animationDuration={1500} />
                       <defs>
-                        <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="colorLabTests" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#5B86E5" stopOpacity={1} />
                           <stop offset="100%" stopColor="#36D1DC" stopOpacity={0.8} />
                         </linearGradient>
@@ -550,7 +444,7 @@ const Dashboard = () => {
                 <tr>
                   <th>Name</th>
                   <th>Age</th>
-                  <th>Condition</th>
+                  <th>Medical History</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -564,7 +458,7 @@ const Dashboard = () => {
                     <tr key={patient.id}>
                       <td>{patient.name}</td>
                       <td>{patient.age}</td>
-                      <td>{patient.condition}</td>
+                      <td>{patient.medicalHistory || 'Not specified'}</td>
                       <td>
                         <span className={`status-badge status-${patient.status.toLowerCase()}`}>
                           {patient.status}

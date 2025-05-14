@@ -22,6 +22,7 @@ const Lab = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Add test types array
   const testTypes = [
@@ -63,6 +64,26 @@ const Lab = () => {
       ],
     }]
   });
+
+  // Helper to convert 12-hour time to 24-hour format
+  const to24HourTime = (hour, minute, ampm) => {
+    let h = parseInt(hour, 10);
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return `${h.toString().padStart(2, '0')}:${minute}`;
+  };
+
+  // State for 12-hour time picker
+  const [time12, setTime12] = useState({ hour: '12', minute: '00', ampm: 'AM' });
+
+  // Update formData.testTime when time12 changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      testTime: to24HourTime(time12.hour, time12.minute, time12.ampm)
+    }));
+    // eslint-disable-next-line
+  }, [time12]);
 
   useEffect(() => {
     fetchTests();
@@ -109,6 +130,17 @@ const Lab = () => {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+    setShowSearchResults(!!e.target.value && filteredPatients.length > 0);
+  };
+
+  const handleSearchResultClick = (patient) => {
+    setFormData({
+      ...formData,
+      patientName: patient.name,
+      patientId: patient._id
+    });
+    setSearchTerm(patient.name);
+    setShowSearchResults(false);
   };
 
   const fetchTests = async () => {
@@ -203,19 +235,75 @@ const Lab = () => {
     }
   };
 
+  // Add this function to generate the formatted patient ID
+  const generatePatientId = (patient) => {
+    if (!patient || !patient.name || !patient.age || !patient.gender) {
+      return 'N/A';
+    }
+    const ageStr = patient.age.toString().padStart(2, '0').substring(0, 2);
+    const namePrefix = patient.name.substring(0, 3).toUpperCase();
+    const genderChar = patient.gender.toLowerCase().startsWith('m') ? 'm' : 'f';
+    return `${ageStr}${namePrefix}${genderChar}`;
+  };
+
+  // Helper to format time to 12-hour format with AM/PM
+  const formatTime12Hour = (time24) => {
+    if (!time24) return '';
+    const [hourStr, minuteStr] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const minute = minuteStr;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${ampm}`;
+  };
+
   return (
     <div className="lab-container">
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
 
-      <div className="search-container">
+      <div className="search-container" style={{ position: 'relative' }}>
         <input
           type="text"
           placeholder="Search by patient name..."
           value={searchTerm}
           onChange={handleSearch}
           className="search-input"
+          onFocus={() => setShowSearchResults(!!searchTerm && filteredPatients.length > 0)}
+          onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
         />
+        {showSearchResults && (
+          <div className="search-results-lab" style={{
+            position: 'absolute',
+            left: 'calc(100% + 10px)',
+            top: 0,
+            width: '260px',
+            background: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            zIndex: 100,
+            maxHeight: '300px',
+            overflowY: 'auto',
+            padding: '0.5rem 0',
+          }}>
+            {filteredPatients.length === 0 ? (
+              <div style={{ padding: '1rem', color: '#888' }}>No results found</div>
+            ) : (
+              filteredPatients.map(patient => (
+                <div
+                  key={patient._id}
+                  style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #f1f1f1' }}
+                  onMouseDown={() => handleSearchResultClick(patient)}
+                >
+                  <div style={{ fontWeight: 600 }}>{patient.name}</div>
+                  <div style={{ fontSize: '0.9em', color: '#666' }}>ID: {generatePatientId(patient)}</div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="lab-form">
@@ -291,13 +379,37 @@ const Lab = () => {
 
           <div className="form-group">
             <label>Test Time</label>
-            <input
-              type="time"
-              name="testTime"
-              value={formData.testTime}
-              onChange={handleChange}
-              required
-            />
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                value={time12.hour}
+                onChange={e => setTime12({ ...time12, hour: e.target.value })}
+                style={{ width: '60px' }}
+              >
+                {Array.from({ length: 12 }, (_, i) => {
+                  const val = (i + 1).toString().padStart(2, '0');
+                  return <option key={val} value={val}>{val}</option>;
+                })}
+              </select>
+              :
+              <select
+                value={time12.minute}
+                onChange={e => setTime12({ ...time12, minute: e.target.value })}
+                style={{ width: '60px' }}
+              >
+                {Array.from({ length: 60 }, (_, i) => {
+                  const val = i.toString().padStart(2, '0');
+                  return <option key={val} value={val}>{val}</option>;
+                })}
+              </select>
+              <select
+                value={time12.ampm}
+                onChange={e => setTime12({ ...time12, ampm: e.target.value })}
+                style={{ width: '60px' }}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -405,35 +517,39 @@ const Lab = () => {
               </tr>
             </thead>
             <tbody>
-              {tests.map(test => (
-                <tr key={test._id}>
-                  <td>{test.patientName}</td>
-                  <td>{test.patientId}</td>
-                  <td>{test.testName}</td>
-                  <td>{new Date(test.testDate).toLocaleDateString()}</td>
-                  <td>{test.testTime}</td>
-                  <td>
-                    <select
-                      value={test.status}
-                      onChange={(e) => handleStatusUpdate(test._id, e.target.value)}
-                      disabled={loading}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </td>
-                  <td>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDelete(test._id)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {tests.map(test => {
+                // Find the patient object for this test
+                const patient = patients.find(p => p._id === test.patientId);
+                return (
+                  <tr key={test._id}>
+                    <td>{test.patientName}</td>
+                    <td>{patient ? generatePatientId(patient) : test.patientId}</td>
+                    <td>{test.testName}</td>
+                    <td>{new Date(test.testDate).toLocaleDateString()}</td>
+                    <td>{formatTime12Hour(test.testTime)}</td>
+                    <td>
+                      <select
+                        value={test.status}
+                        onChange={(e) => handleStatusUpdate(test._id, e.target.value)}
+                        disabled={loading}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        className="delete-button"
+                        onClick={() => handleDelete(test._id)}
+                        disabled={loading}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

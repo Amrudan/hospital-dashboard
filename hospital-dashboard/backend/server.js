@@ -23,6 +23,7 @@ const pharmacyRoutes = require('./routes/pharmacy');
 const invoiceRoutes = require('./routes/invoices');
 const authRoutes = require('./routes/auth');
 const medicineRoutes = require('./routes/medicineRoutes');
+const appointmentRoutes = require('./routes/appointments');
 
 app.use('/api/patient', require('./routes/patient'));
 app.use('/api/patients', patientRoutes);
@@ -34,6 +35,7 @@ app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/medicines', medicineRoutes);
+app.use('/api/appointments', appointmentRoutes);
 // Root route for API check
 app.get('/api', (req, res) => {
   res.send('Hospital Management System API is running');

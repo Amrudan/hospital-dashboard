@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { FaCalendarAlt, FaHistory, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import { FaCalendarAlt, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
 import './PatientLayout.css';
 
 const PatientLayout = () => {
@@ -11,7 +11,6 @@ const PatientLayout = () => {
 
   const menuItems = [
     { path: '/patient-dashboard', icon: <FaCalendarAlt />, label: 'Book Appointment' },
-    { path: '/patient-dashboard/history', icon: <FaHistory />, label: 'Appointment History' },
     { path: '/patient-dashboard/profile', icon: <FaUserCircle />, label: 'My Profile' },
   ];
 

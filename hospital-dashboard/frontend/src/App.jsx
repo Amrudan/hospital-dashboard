@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 // import PatientLogin from './components/PatientLayout';
 import PatientDashboard from './pages/PatientDashboard';
-import Dashboard from './pages/Dashboard';
+// import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import Staff from './pages/Staff';
 import Ward from './pages/Ward';
@@ -16,6 +16,7 @@ import PatientLogin from './pages/PatientLogin';
 import PatientSignup from './pages/PatientSignup';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSignup from './pages/AdminSignup';
+// import DoctorAppointments from './pages/DoctorAppointments';
 import './App.css';
 import PatientLayout from './components/PatientLayout';
 import PatientProfile from './pages/PatientProfile';
@@ -133,10 +134,15 @@ function App() {
               <Invoice />
             </AdminLayout>
           } />
+          {/* <Route path="/appointments" element={
+            <AdminLayout>
+              <DoctorAppointments />
+            </AdminLayout>
+          } /> */}
           
           <Route path="/admin-signup" element={<AdminSignup />} />
           
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -38,17 +38,49 @@ const PatientDashboard = () => {
   const handleAppointmentSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Appointment booked:', appointmentForm);
-      alert('Appointment booked successfully!');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login again to book an appointment');
+        return;
+      }
+
+      // Format the date to ensure it's in the correct format
+      const formattedDate = new Date(appointmentForm.date).toISOString();
+
+      const appointmentData = {
+        doctorId: appointmentForm.doctor,
+        date: formattedDate,
+        time: appointmentForm.time,
+        reason: appointmentForm.reason,
+        status: 'pending'
+      };
+
+      console.log('Sending appointment data:', appointmentData); // Debug log
+
+      const response = await axios.post(
+        'http://localhost:5000/api/appointments',
+        appointmentData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data) {
+        alert('Appointment request submitted successfully! The doctor will review and accept it.');
+        // Reset form
       setAppointmentForm({
         doctor: '',
         date: '',
         time: '',
         reason: ''
       });
+      }
     } catch (error) {
       console.error('Error booking appointment:', error);
-      alert('Failed to book appointment. Please try again.');
+      alert(error.response?.data?.message || 'Failed to book appointment. Please try again.');
     }
   };
 

@@ -6,23 +6,26 @@ exports.getAllWards = async (req, res) => {
     const wards = await Ward.find().populate('assignedStaff', 'name role');
     
     // Transform wards data to match frontend expectations
-    const transformedWards = wards.map(ward => ({
-      _id: ward._id,
-      wardNumber: ward.name,
-      wardType: ward.type,
-      capacity: ward.capacity,
-      currentOccupancy: ward.occupiedBeds,
-      nurseInCharge: ward.assignedStaff && ward.assignedStaff.length > 0 
-        ? ward.assignedStaff.find(staff => staff.role.toLowerCase === 'Nurse')?.name 
-        : 'Not Assigned',
-      status: ward.status === 'Operational' ? 'Active' : ward.status === 'Under Maintenance' ? 'Maintenance' : ward.status,
-      floor: `${ward.floorNumber}${getOrdinalSuffix(ward.floorNumber)} Floor`,
-      description: '',
-      equipment: '',
-      lastMaintenance: '',
-      nextMaintenance: '',
-      specialNotes: ''
-    }));
+    const transformedWards = wards.map(ward => {
+      // Find the nurse from assigned staff
+      const nurse = ward.assignedStaff.find(staff => staff.role === 'Nurse');
+      
+      return {
+        _id: ward._id,
+        wardNumber: ward.name,
+        wardType: ward.type,
+        capacity: ward.capacity,
+        currentOccupancy: ward.occupiedBeds,
+        nurseInCharge: nurse ? nurse.name : 'Not Assigned',
+        status: ward.status === 'Operational' ? 'Active' : ward.status === 'Under Maintenance' ? 'Maintenance' : ward.status,
+        floor: `${ward.floorNumber}${getOrdinalSuffix(ward.floorNumber)} Floor`,
+        description: '',
+        equipment: '',
+        lastMaintenance: '',
+        nextMaintenance: '',
+        specialNotes: ''
+      };
+    });
     
     res.status(200).json(transformedWards);
   } catch (error) {
@@ -89,14 +92,33 @@ exports.createWard = async (req, res) => {
       occupiedBeds: req.body.currentOccupancy || 0,
       floorNumber: parseInt(req.body.floor.split(' ')[0]) || 1, // Extract number from floor string
       status: req.body.status === 'Active' ? 'Operational' : req.body.status === 'Maintenance' ? 'Under Maintenance' : req.body.status === 'Full' ? 'Full' : 'Operational',
-      // Additional fields as needed
-      assignedStaff: []
+      assignedStaff: req.body.nurseInCharge ? [req.body.nurseInCharge] : [] // Add nurse to assignedStaff
     };
     
     const newWard = new Ward(wardData);
     const savedWard = await newWard.save();
     
-    res.status(201).json(savedWard);
+    // Populate the staff data before sending response
+    const populatedWard = await Ward.findById(savedWard._id).populate('assignedStaff', 'name role');
+    
+    // Transform the response to match frontend expectations
+    const transformedWard = {
+      _id: populatedWard._id,
+      wardNumber: populatedWard.name,
+      wardType: populatedWard.type,
+      capacity: populatedWard.capacity,
+      currentOccupancy: populatedWard.occupiedBeds,
+      nurseInCharge: populatedWard.assignedStaff.find(staff => staff.role === 'Nurse')?.name || 'Not Assigned',
+      status: populatedWard.status === 'Operational' ? 'Active' : populatedWard.status === 'Under Maintenance' ? 'Maintenance' : populatedWard.status,
+      floor: `${populatedWard.floorNumber}${getOrdinalSuffix(populatedWard.floorNumber)} Floor`,
+      description: '',
+      equipment: '',
+      lastMaintenance: '',
+      nextMaintenance: '',
+      specialNotes: ''
+    };
+    
+    res.status(201).json(transformedWard);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -113,20 +135,37 @@ exports.updateWard = async (req, res) => {
       occupiedBeds: req.body.currentOccupancy || 0,
       floorNumber: parseInt(req.body.floor.split(' ')[0]) || 1, // Extract number from floor string
       status: req.body.status === 'Active' ? 'Operational' : req.body.status === 'Maintenance' ? 'Under Maintenance' : req.body.status === 'Full' ? 'Full' : 'Operational',
-      // Preserve existing assignedStaff
+      assignedStaff: req.body.nurseInCharge ? [req.body.nurseInCharge] : [] // Update nurse in assignedStaff
     };
     
     const updatedWard = await Ward.findByIdAndUpdate(
       req.params.id,
       wardData,
       { new: true, runValidators: true }
-    );
+    ).populate('assignedStaff', 'name role');
     
     if (!updatedWard) {
       return res.status(404).json({ message: 'Ward not found' });
     }
     
-    res.status(200).json(updatedWard);
+    // Transform the response to match frontend expectations
+    const transformedWard = {
+      _id: updatedWard._id,
+      wardNumber: updatedWard.name,
+      wardType: updatedWard.type,
+      capacity: updatedWard.capacity,
+      currentOccupancy: updatedWard.occupiedBeds,
+      nurseInCharge: updatedWard.assignedStaff.find(staff => staff.role === 'Nurse')?.name || 'Not Assigned',
+      status: updatedWard.status === 'Operational' ? 'Active' : updatedWard.status === 'Under Maintenance' ? 'Maintenance' : updatedWard.status,
+      floor: `${updatedWard.floorNumber}${getOrdinalSuffix(updatedWard.floorNumber)} Floor`,
+      description: '',
+      equipment: '',
+      lastMaintenance: '',
+      nextMaintenance: '',
+      specialNotes: ''
+    };
+    
+    res.status(200).json(transformedWard);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
