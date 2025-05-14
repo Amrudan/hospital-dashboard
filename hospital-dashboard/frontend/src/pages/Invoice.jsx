@@ -1007,13 +1007,14 @@ const Invoice = () => {
                   <th>Doctor</th>
                   <th>Amount</th>
                   <th>Status</th>
+                  <th>Payment Method</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="empty-message">
+                    <td colSpan="8" className="empty-message">
                       <div>
                         <FaFileInvoice className="empty-icon" />
                         <p>No invoices found</p>
@@ -1029,6 +1030,7 @@ const Invoice = () => {
                     const patientName = invoice.patientName || 'N/A';
                     const doctorName = invoice.doctorName || 'N/A';
                     const treatment = invoice.treatment || (invoice.items && invoice.items[0] && invoice.items[0].description) || 'N/A';
+                    const paymentMethod = invoice.paymentMethod || 'Not Specified';
                     
                     console.log(`Invoice ${index} patient:`, patientName, "doctor:", doctorName);
                     
@@ -1044,6 +1046,11 @@ const Invoice = () => {
                         <td>
                           <span className={`status ${(invoice.paymentStatus || 'unpaid').toLowerCase()}`}>
                             {invoice.paymentStatus || 'Unpaid'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`payment-method ${paymentMethod.toLowerCase().replace(' ', '-')}`}>
+                            {paymentMethod}
                           </span>
                         </td>
                         <td>

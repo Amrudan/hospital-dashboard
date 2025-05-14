@@ -391,6 +391,42 @@ td.amount {
   color: #ff8f00;
 }
 
+/* Payment Method Styles */
+.payment-method {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.payment-method.cash {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.payment-method.credit-card,
+.payment-method.debit-card {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.payment-method.upi {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.payment-method.bank-transfer {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.payment-method.not-specified {
+  background-color: #f5f5f5;
+  color: #757575;
+}
+
 /* Table Action Buttons */
 .actions {
   display: flex;
