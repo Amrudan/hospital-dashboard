@@ -33,7 +33,8 @@ const Invoice = () => {
     wardNumber: "",
     totalAmount: "",
     governmentScheme: "",
-    paymentMethod: ""
+    paymentMethod: "",
+    labStatus: ""
   });
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -263,9 +264,8 @@ const Invoice = () => {
     let missingFields = [];
     if (!invoiceData.patientId) missingFields.push("Patient");
     if (!invoiceData.doctorName) missingFields.push("Doctor");
-    if (!invoiceData.labName) missingFields.push("Lab");
     if (!invoiceData.treatment || invoiceData.treatment === 'Select Treatment') missingFields.push("Treatment");
-    
+    if (!invoiceData.labStatus) missingFields.push("Lab Status");
     if (missingFields.length > 0) {
       alert(`Please fill in the following required fields: ${missingFields.join(", ")}`);
       return;
@@ -302,7 +302,8 @@ const Invoice = () => {
         subtotal: treatmentCosts[invoiceData.treatment] || 0,
         discount: treatmentCosts[invoiceData.treatment] - parseFloat(invoiceData.totalAmount || 0) || 0,
         total: parseFloat(invoiceData.totalAmount || 0),
-        paymentStatus: invoiceData.paymentMethod ? 'Paid' : 'Unpaid'
+        paymentStatus: invoiceData.paymentMethod ? 'Paid' : 'Unpaid',
+        labStatus: invoiceData.labStatus || 'Not Completed'
       };
 
       console.log("Saving invoice with data:", invoiceToSave);
@@ -342,7 +343,8 @@ const Invoice = () => {
       treatment: treatment,
       wardNumber: invoice.wardNumber || '',
       totalAmount: invoice.total || invoice.totalAmount || '0',
-      governmentScheme: invoice.governmentScheme || 'None'
+      governmentScheme: invoice.governmentScheme || 'None',
+      labStatus: invoice.labStatus || 'Not Completed'
     });
     
     setEditingIndex(index);
@@ -373,7 +375,8 @@ const Invoice = () => {
       wardNumber: "",
       totalAmount: "",
       governmentScheme: "",
-      paymentMethod: ""
+      paymentMethod: "",
+      labStatus: ""
     });
     setShowPaymentOptions(false);
     setEditingIndex(null);
@@ -535,13 +538,14 @@ const Invoice = () => {
               }
               
               const status = invoice.paymentStatus || 'Unpaid';
+              const labStatus = invoice.labStatus || 'Not Completed';
               
-              return [id, patientName, treatment, `₹${total.toFixed(2)}`, status];
+              return [id, patientName, treatment, labStatus, `₹${total.toFixed(2)}`, status];
             });
             
             autoTable(pdf, {
               startY: 75,
-              head: [['ID', 'Patient', 'Treatment', 'Amount', 'Status']],
+              head: [['ID', 'Patient', 'Treatment', 'Lab Status', 'Amount', 'Status']],
               body: tableData,
               theme: 'striped',
               styles: { fontSize: 8 },
@@ -735,14 +739,16 @@ const Invoice = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>Lab</label>
-                <input
-                  type="text"
-                  name="labName"
-                  placeholder="Lab Name"
-                  value={invoiceData.labName}
+                <label>Lab Status</label>
+                <select
+                  name="labStatus"
+                  value={invoiceData.labStatus || ''}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Select Status</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Not Completed">Not Completed</option>
+                </select>
               </div>
             </div>
             
@@ -1005,6 +1011,7 @@ const Invoice = () => {
                   <th>Patient</th>
                   <th>Treatment</th>
                   <th>Doctor</th>
+                  <th>Lab Status</th>
                   <th>Amount</th>
                   <th>Status</th>
                   <th>Payment Method</th>
@@ -1014,7 +1021,7 @@ const Invoice = () => {
               <tbody>
                 {filteredInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-message">
+                    <td colSpan="9" className="empty-message">
                       <div>
                         <FaFileInvoice className="empty-icon" />
                         <p>No invoices found</p>
@@ -1031,6 +1038,7 @@ const Invoice = () => {
                     const doctorName = invoice.doctorName || 'N/A';
                     const treatment = invoice.treatment || (invoice.items && invoice.items[0] && invoice.items[0].description) || 'N/A';
                     const paymentMethod = invoice.paymentMethod || 'Not Specified';
+                    const labStatus = invoice.labStatus || 'Not Completed';
                     
                     console.log(`Invoice ${index} patient:`, patientName, "doctor:", doctorName);
                     
@@ -1042,6 +1050,7 @@ const Invoice = () => {
                         <td>{patientName}</td>
                         <td>{treatment}</td>
                         <td>{doctorName}</td>
+                        <td>{labStatus}</td>
                         <td className="amount">₹{finalAmount}</td>
                         <td>
                           <span className={`status ${(invoice.paymentStatus || 'unpaid').toLowerCase()}`}>

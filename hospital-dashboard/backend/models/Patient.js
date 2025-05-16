@@ -38,6 +38,11 @@ const patientSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Staff'
   },
+  patientType: {
+    type: String,
+    enum: ['Inpatient', 'Outpatient'],
+    default: 'Outpatient'
+  },
   status: {
     type: String,
     enum: ['Admitted', 'Discharged', 'Critical', 'Stable'],
@@ -46,3 +51,5 @@ const patientSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('Patient', patientSchema); 
+
+

@@ -651,17 +651,32 @@ const Patients = () => {
             ></textarea>
             <textarea
               name="medicalHistory"
-              placeholder="Medical History"
+              placeholder="Reason"
               value={formData.medicalHistory}
               onChange={handleInputChange}
             ></textarea>
           </div>
 
           <div className="form-row">
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              required
+              className="form-select"
+            >
+              <option value="Admitted">Admitted</option>
+              <option value="Discharged">Discharged</option>
+              <option value="Critical">Critical</option>
+              <option value="Stable">Stable</option>
+            </select>
+          </div>
+
+          <div className="form-row">
             <div className="form-group full-width">
               <label>Patient Type</label>
-              <div className="radio-group">
-                <label className="radio-option">
+              <div className="radio-group patient-type-radio-group">
+                <label className="radio-option patient-type-radio">
                   <input
                     type="radio"
                     name="patientType"
@@ -669,9 +684,9 @@ const Patients = () => {
                     checked={formData.patientType === 'Outpatient'}
                     onChange={handleInputChange}
                   />
-                  Outpatient
+                  <span>Outpatient</span>
                 </label>
-                <label className="radio-option">
+                <label className="radio-option patient-type-radio">
                   <input
                     type="radio"
                     name="patientType"
@@ -679,7 +694,7 @@ const Patients = () => {
                     checked={formData.patientType === 'Inpatient'}
                     onChange={handleInputChange}
                   />
-                  Stay in Hospital (Inpatient)
+                  <span>Stay in Hospital (Inpatient)</span>
                 </label>
               </div>
             </div>
@@ -890,6 +905,36 @@ const Patients = () => {
           </div>
         </div>
       )}
+
+      <style jsx="true">{`
+        .patient-type-radio-group {
+          gap: 32px;
+          margin-top: 8px;
+          padding: 8px 0;
+        }
+        .patient-type-radio {
+          background: #f4f8fb;
+          border-radius: 18px;
+          padding: 10px 22px;
+          box-shadow: 0 2px 8px rgba(47,128,237,0.04);
+          font-size: 1rem;
+          font-weight: 500;
+          transition: box-shadow 0.2s;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+        }
+        .patient-type-radio input[type='radio'] {
+          margin-right: 10px;
+          accent-color: #2F80ED;
+          width: 20px;
+          height: 20px;
+        }
+        .patient-type-radio input[type='radio']:checked + span {
+          color: #2F80ED;
+          font-weight: 600;
+        }
+      `}</style>
     </div>
   );
 };

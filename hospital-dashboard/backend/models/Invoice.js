@@ -75,6 +75,17 @@ const invoiceSchema = new mongoose.Schema({
   },
   notes: {
     type: String
+  },
+  labStatus: {
+    type: String,
+    enum: ['Completed', 'Not Completed'],
+    default: 'Not Completed'
+  },
+  doctorName: {
+    type: String
+  },
+  patientName: {
+    type: String
   }
 }, { timestamps: true });
 

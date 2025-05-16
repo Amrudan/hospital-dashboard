@@ -56,7 +56,7 @@ const Dashboard = () => {
         id: patient._id,
         name: patient.name,
         age: patient.age,
-        condition: patient.diagnosis || 'Not specified',
+        reason: patient.medicalHistory || 'Not specified',
         status: patient.status || 'admitted'
       })));
       
@@ -444,7 +444,7 @@ const Dashboard = () => {
                 <tr>
                   <th>Name</th>
                   <th>Age</th>
-                  <th>Medical History</th>
+                  <th>Reason</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -458,7 +458,7 @@ const Dashboard = () => {
                     <tr key={patient.id}>
                       <td>{patient.name}</td>
                       <td>{patient.age}</td>
-                      <td>{patient.medicalHistory || 'Not specified'}</td>
+                      <td>{patient.reason}</td>
                       <td>
                         <span className={`status-badge status-${patient.status.toLowerCase()}`}>
                           {patient.status}
