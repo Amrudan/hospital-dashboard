@@ -30,8 +30,9 @@ const DoctorAppointments = () => {
 
       // Filter appointments for the logged-in doctor
       const user = JSON.parse(localStorage.getItem('user'));
+      const doctorIdToMatch = user.staffId || user._id;
       const doctorAppointments = response.data.filter(
-        appointment => appointment.doctorId && appointment.doctorId._id === user._id
+        appointment => appointment.doctorId && appointment.doctorId._id === doctorIdToMatch
       );
 
       setAppointments(doctorAppointments);

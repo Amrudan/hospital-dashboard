@@ -52,10 +52,11 @@ router.get('/patient', auth, async (req, res) => {
   }
 });
 
-// Get all appointments (for admin/doctor view)
+// Get all appointments for the logged-in doctor
 router.get('/doctor', auth, async (req, res) => {
   try {
-    const appointments = await Appointment.find()
+    const doctorId = req.user.staffId || req.user.id;
+    const appointments = await Appointment.find({ doctorId })
       .populate('patientId', 'name')
       .populate('doctorId', 'name')
       .sort({ date: -1 });

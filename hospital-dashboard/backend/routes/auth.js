@@ -59,9 +59,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    let staffId = null;
+    if (user.role === 'admin' || user.role === 'Doctor' || user.role === 'doctor') {
+      // Try to find the staff record for this doctor/admin by name
+      const Staff = require('../models/Staff');
+      const staff = await Staff.findOne({ name: user.name });
+      if (staff) {
+        staffId = staff._id;
+        user.staffId = staffId;
+        await user.save();
+      }
+    }
+
     // Create JWT token
     const token = jwt.sign(
-      { user: { id: user._id, role: user.role } },
+      { user: { id: user._id, role: user.role, staffId } },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -72,7 +84,8 @@ router.post('/login', async (req, res) => {
         _id: user._id,
         name: user.name,
         phoneNumber: user.phoneNumber,
-        role: user.role
+        role: user.role,
+        staffId
       }
     });
   } catch (error) {

@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'patient'],
     required: true
   },
+  staffId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff',
+    required: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

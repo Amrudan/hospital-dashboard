@@ -343,7 +343,7 @@ const Staff = () => {
                   className="form-input"
                 >
                   <option value="Morning">Morning</option>
-                  <option value="Evening">Evening</option>
+                  <option value="Night">Night</option>
                 </select>
               </div>
             </div>

@@ -61,7 +61,7 @@ const PatientLogin = () => {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Patient Login</h1>
+        <h2>Patient Login</h2>
         {error && <div className="error-message">{error}</div>}
         
         <form onSubmit={handleLogin}>
@@ -99,7 +99,7 @@ const PatientLogin = () => {
             </Link>
           </p>
         </form>
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
           <Link to="/admin-login" className="link-button">
             Go to Admin Login
           </Link>

@@ -62,6 +62,11 @@ const staffSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0
+  },
+  shift: {
+    type: String,
+    enum: ['Morning', 'Evening', 'Night'],
+    default: 'Morning'
   }
 }, { timestamps: true });
 

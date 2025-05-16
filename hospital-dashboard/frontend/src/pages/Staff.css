@@ -901,11 +901,7 @@ tbody tr:hover {
   border: 1px solid rgba(66, 153, 225, 0.3);
 }
 
-.shift-badge.evening {
-  background-color: rgba(113, 128, 150, 0.15);
-  color: #718096;
-  border: 1px solid rgba(113, 128, 150, 0.3);
-}
+
 
 /* Update column widths */
 .specialization-col {
@@ -978,10 +974,6 @@ tbody tr:hover {
   color: #92400e;
 }
 
-.shift-evening {
-  background-color: #e0e7ff;
-  color: #3730a3;
-}
 
 .shift-night {
   background-color: #f3e8ff;
