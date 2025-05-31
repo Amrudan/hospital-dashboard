@@ -87,8 +87,8 @@ const Invoice = () => {
   };
 
   const paymentDetails = {
-    gpay: "hospital@upi",
-    phonepay: "hospital@ybl",
+    gpay: "amrudan.tss-1@oksbi",
+    phonepay: "amrudan.tss-1@oksbi",
     merchantName: "Hospital Management System",
     merchantId: "HMS001",
     bankAccount: {
@@ -99,8 +99,8 @@ const Invoice = () => {
       branch: "Main Branch"
     },
     cardTerminal: {
-      terminalId: "TRM12345",
-      merchantCode: "HOSP998877"
+      terminalId: "XXX",
+      merchantCode: "YYY"
     }
   };
 
