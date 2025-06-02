@@ -87,8 +87,8 @@ const Invoice = () => {
   };
 
   const paymentDetails = {
-    gpay: "amrudan.tss-1@oksbi",
-    phonepay: "amrudan.tss-1@oksbi",
+    gpay: "example@oksbi",
+    phonepay: "example@oksbi",
     merchantName: "Hospital Management System",
     merchantId: "HMS001",
     bankAccount: {
